@@ -8,11 +8,13 @@ public class PlsyerRadiconMonoBehaviourScript : MonoBehaviour {
     [Header("Look")]
     public Transform viewPivot;
     public float mouseSensitivity = 2f;
+    public bool limitPitch = false;
     public float minPitch = -70f;
     public float maxPitch = 75f;
     public bool lockCursor = true;
 
     float pitch;
+    float yaw;
     float verticalVelocity;
     CharacterController characterController;
 
@@ -21,6 +23,17 @@ public class PlsyerRadiconMonoBehaviourScript : MonoBehaviour {
 
         if (viewPivot == null && UnityEngine.Camera.main != null) {
             viewPivot = UnityEngine.Camera.main.transform;
+            }
+
+        yaw = transform.eulerAngles.y;
+
+        if (viewPivot == transform) {
+            pitch = transform.eulerAngles.x;
+            } else if (viewPivot != null) {
+            pitch = viewPivot.localEulerAngles.x;
+            if (pitch > 180f) {
+                pitch -= 360f;
+                }
             }
 
         if (lockCursor) {
@@ -37,14 +50,26 @@ public class PlsyerRadiconMonoBehaviourScript : MonoBehaviour {
     void HandleLook () {
         float mouseX = Input.GetAxis("Mouse X") * mouseSensitivity;
         float mouseY = Input.GetAxis("Mouse Y") * mouseSensitivity;
-
-        transform.Rotate(0f, mouseX, 0f);
-
+        yaw += mouseX;
         pitch -= mouseY;
-        pitch = Mathf.Clamp(pitch, minPitch, maxPitch);
+
+        if (limitPitch) {
+            pitch = Mathf.Clamp(pitch, minPitch, maxPitch);
+            }
+
+        if (viewPivot == transform) {
+            transform.rotation = Quaternion.Euler(pitch, yaw, 0f);
+            return;
+            }
+
+        transform.rotation = Quaternion.Euler(0f, yaw, 0f);
 
         if (viewPivot != null) {
-            viewPivot.localRotation = Quaternion.Euler(pitch, 0f, 0f);
+            if (viewPivot.IsChildOf(transform)) {
+                viewPivot.localRotation = Quaternion.Euler(pitch, 0f, 0f);
+                } else {
+                viewPivot.rotation = Quaternion.Euler(pitch, yaw, 0f);
+                }
             }
         }
 
