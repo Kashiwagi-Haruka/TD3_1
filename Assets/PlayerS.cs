@@ -2,15 +2,15 @@ using UnityEngine;
 
 public class PlayerS : MonoBehaviour
 {
-    public float moveSpeed = 5f;   // 移動速度
-    public float gridSize = 1f;    // マスサイズ
+    public float moveSpeed = 5.0f;   // 移動速度
+    public float gridSize = 1.0f;    // マスサイズ
 
     bool isMoving = false;
     Vector3 targetPos;
 
     void Start () {
         targetPos = transform.position;
-        }
+    }
 
     void Update () {
         if (!isMoving) {
@@ -38,15 +38,15 @@ public class PlayerS : MonoBehaviour
                         if (block.TryPush(dir)) {
                             targetPos = transform.position + dir * gridSize;
                             StartCoroutine(Move());
-                            }
                         }
-                    } else {
-                    targetPos = transform.position + dir * gridSize;
-                    StartCoroutine(Move());
                     }
+                } else {
+                   targetPos = transform.position + dir * gridSize;
+                   StartCoroutine(Move());
                 }
             }
         }
+    }
 
     System.Collections.IEnumerator Move () {
         isMoving = true;
@@ -58,7 +58,7 @@ public class PlayerS : MonoBehaviour
                 moveSpeed * Time.deltaTime
             );
             yield return null;
-            }
+        }
 
         transform.position = targetPos;
         isMoving = false;
