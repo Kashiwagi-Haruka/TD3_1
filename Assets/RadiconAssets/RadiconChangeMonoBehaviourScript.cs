@@ -57,21 +57,29 @@ public class RadiconChangeMonoBehaviourScript : MonoBehaviour {
         }
 
     private void ResolveTargetsIfNeeded () {
-        if (playerController == null) {
+        if (!IsSceneComponent(playerController)) {
             playerController = FindAnyObjectByType<PlsyerRadiconMonoBehaviourScript>();
             }
 
-        if (radiconController == null) {
+        if (!IsSceneComponent(radiconController)) {
             radiconController = FindAnyObjectByType<RadiconMonoBehaviourScript>();
             }
 
-        if (playerTransform == null && playerController != null) {
+        if (!IsSceneTransform(playerTransform) && playerController != null) {
             playerTransform = playerController.transform;
             }
 
-        if (radiconTransform == null && radiconController != null) {
+        if (!IsSceneTransform(radiconTransform) && radiconController != null) {
             radiconTransform = radiconController.transform;
             }
+        }
+
+    private bool IsSceneComponent (MonoBehaviour component) {
+        return component != null && component.gameObject.scene.IsValid() && component.gameObject.scene.isLoaded;
+        }
+
+    private bool IsSceneTransform (Transform target) {
+        return target != null && target.gameObject.scene.IsValid() && target.gameObject.scene.isLoaded;
         }
 
     private void EnsureCameraController () {
