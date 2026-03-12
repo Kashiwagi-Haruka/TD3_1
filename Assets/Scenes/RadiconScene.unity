@@ -286,6 +286,10 @@ PrefabInstance:
       propertyPath: radiconController
       value: 
       objectReference: {fileID: 645157241}
+    - target: {fileID: 3104578008390259591, guid: 54654b7a56c75c3438d6a88825c5d6a4, type: 3}
+      propertyPath: fixedCameraOffset.y
+      value: 5
+      objectReference: {fileID: 0}
     - target: {fileID: 7655714541163842895, guid: 54654b7a56c75c3438d6a88825c5d6a4, type: 3}
       propertyPath: m_LocalPosition.x
       value: 3.08

@@ -20,6 +20,7 @@ public class RadiconChangeMonoBehaviourScript : MonoBehaviour {
     [SerializeField] private float playerCameraFollowSpeed = 9f;
     [SerializeField] private Vector3 fixedCameraOffset = new Vector3(0f, 10.0f, 0f);
     [SerializeField] private Vector3 fixedCameraEulerAngles = new Vector3(90f, 0f, 0f);
+    private Renderer[] playerRenderers = System.Array.Empty<Renderer>();
 
     private bool controlRadicon;
     private bool isPlayerTouching;
@@ -85,11 +86,21 @@ public class RadiconChangeMonoBehaviourScript : MonoBehaviour {
 
         if (!IsSceneTransform(playerTransform) && playerController != null) {
             playerTransform = playerController.transform;
+            CachePlayerRenderers();
             }
 
         if (!IsSceneTransform(radiconTransform) && radiconController != null) {
             radiconTransform = radiconController.transform;
             }
+        }
+
+    private void CachePlayerRenderers () {
+        if (playerTransform == null) {
+            playerRenderers = System.Array.Empty<Renderer>();
+            return;
+            }
+
+        playerRenderers = playerTransform.GetComponentsInChildren<Renderer>(true);
         }
 
     private bool IsSceneComponent (MonoBehaviour component) {
@@ -127,12 +138,28 @@ public class RadiconChangeMonoBehaviourScript : MonoBehaviour {
             playerController.enabled = !controlRadicon;
             }
 
+        SetPlayerVisualVisible(!controlRadicon);
+
         if (radiconController != null) {
             radiconController.enabled = controlRadicon;
             }
 
         if (cameraController != null) {
             cameraController.SetFollowMode(!controlRadicon);
+            }
+        }
+
+    private void SetPlayerVisualVisible (bool isVisible) {
+        if (playerRenderers.Length == 0) {
+            CachePlayerRenderers();
+            }
+
+        foreach (Renderer playerRenderer in playerRenderers) {
+            if (playerRenderer == null) {
+                continue;
+                }
+
+            playerRenderer.enabled = isVisible;
             }
         }
 
