@@ -469,6 +469,14 @@ PrefabInstance:
       propertyPath: groundCheck
       value: 
       objectReference: {fileID: 917045810}
+    - target: {fileID: -2726162169388332095, guid: deab0c3571ebf7f469e3abdd1e7c2a8d, type: 3}
+      propertyPath: topPortalTarget
+      value: 
+      objectReference: {fileID: 7655714541163842895, guid: 54654b7a56c75c3438d6a88825c5d6a4, type: 3}
+    - target: {fileID: -2726162169388332095, guid: deab0c3571ebf7f469e3abdd1e7c2a8d, type: 3}
+      propertyPath: floatingPortalTarget
+      value: 
+      objectReference: {fileID: 1777210164957380929, guid: deab0c3571ebf7f469e3abdd1e7c2a8d, type: 3}
     - target: {fileID: 1777210164957380929, guid: deab0c3571ebf7f469e3abdd1e7c2a8d, type: 3}
       propertyPath: m_LocalScale.x
       value: 0.3
