@@ -41,13 +41,28 @@ public class RadiconMonoBehaviourScript : MonoBehaviour {
         }
 
     private void ResolvePortalTargets () {
+        topPortalTarget = ResolveSceneTransformReference(topPortalTarget);
         if (!IsSceneTransform(topPortalTarget)) {
             topPortalTarget = transform;
             }
 
+        floatingPortalTarget = ResolveSceneTransformReference(floatingPortalTarget);
         if (!IsSceneTransform(floatingPortalTarget)) {
             floatingPortalTarget = transform;
             }
+        }
+
+    private Transform ResolveSceneTransformReference (Transform target) {
+        if (IsSceneTransform(target)) {
+            return target;
+            }
+
+        if (target == null) {
+            return null;
+            }
+
+        GameObject sceneObjectWithSameName = GameObject.Find(target.name);
+        return sceneObjectWithSameName == null ? null : sceneObjectWithSameName.transform;
         }
 
     private bool IsSceneTransform (Transform target) {
@@ -105,9 +120,13 @@ public class RadiconMonoBehaviourScript : MonoBehaviour {
         portalObject.AddComponent<MeshRenderer>();
 
         Mesh quadMesh = Resources.GetBuiltinResource<Mesh>("Quad.fbx");
-        if (quadMesh != null) {
-            meshFilter.sharedMesh = quadMesh;
+        if (quadMesh == null) {
+            GameObject tempQuad = GameObject.CreatePrimitive(PrimitiveType.Quad);
+            quadMesh = tempQuad.GetComponent<MeshFilter>().sharedMesh;
+            Destroy(tempQuad);
             }
+
+        meshFilter.sharedMesh = quadMesh;
 
         ReattachPortal(portalObject.transform, parentTarget, localPosition);
         return portalObject;
