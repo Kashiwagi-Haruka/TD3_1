@@ -23,33 +23,23 @@ public class RadiconChangeMonoBehaviourScript : MonoBehaviour {
 
     private bool controlRadicon;
     private bool isPlayerTouching;
-    private UnityEngine.Camera mainCamera;
+    private CameraMonoBehaviourScript cameraController;
 
     private void Awake () {
-        if (playerController == null) {
-            playerController = FindAnyObjectByType<PlsyerRadiconMonoBehaviourScript>();
-            }
-
-        if (radiconController == null) {
-            radiconController = FindAnyObjectByType<RadiconMonoBehaviourScript>();
-            }
-
-        if (playerTransform == null && playerController != null) {
-            playerTransform = playerController.transform;
-            }
-
-        if (radiconTransform == null && radiconController != null) {
-            radiconTransform = radiconController.transform;
-            }
-
-        mainCamera = UnityEngine.Camera.main;
+        ResolveTargetsIfNeeded();
+        EnsureCameraController();
+        ConfigureCameraController();
         ApplyControlState();
         SetHandSpriteVisible(false);
         }
 
     private void Update () {
-        if (mainCamera == null) {
-            mainCamera = UnityEngine.Camera.main;
+        ResolveTargetsIfNeeded();
+
+        if (cameraController == null) {
+            EnsureCameraController();
+            ConfigureCameraController();
+            ApplyControlState();
             }
 
         isPlayerTouching = IsPlayerTouchingRadiconChange();
@@ -66,26 +56,44 @@ public class RadiconChangeMonoBehaviourScript : MonoBehaviour {
             }
         }
 
-    private void LateUpdate () {
-        if (mainCamera == null || playerTransform == null) {
+    private void ResolveTargetsIfNeeded () {
+        if (playerController == null) {
+            playerController = FindAnyObjectByType<PlsyerRadiconMonoBehaviourScript>();
+            }
+
+        if (radiconController == null) {
+            radiconController = FindAnyObjectByType<RadiconMonoBehaviourScript>();
+            }
+
+        if (playerTransform == null && playerController != null) {
+            playerTransform = playerController.transform;
+            }
+
+        if (radiconTransform == null && radiconController != null) {
+            radiconTransform = radiconController.transform;
+            }
+        }
+
+    private void EnsureCameraController () {
+        UnityEngine.Camera mainCamera = UnityEngine.Camera.main;
+        if (mainCamera == null) {
             return;
             }
 
-        if (controlRadicon) {
-            mainCamera.transform.position = transform.TransformPoint(fixedCameraOffset);
-            mainCamera.transform.rotation = Quaternion.Euler(fixedCameraEulerAngles);
+        cameraController = mainCamera.GetComponent<CameraMonoBehaviourScript>();
+        if (cameraController == null) {
+            cameraController = mainCamera.gameObject.AddComponent<CameraMonoBehaviourScript>();
+            }
+        }
+
+    private void ConfigureCameraController () {
+        if (cameraController == null) {
             return;
             }
 
-        Vector3 targetPosition = playerTransform.TransformPoint(playerCameraOffset);
-
-        mainCamera.transform.position = Vector3.Lerp(
-            mainCamera.transform.position,
-            targetPosition,
-            playerCameraFollowSpeed * Time.deltaTime
-        );
-
-        mainCamera.transform.LookAt(playerTransform.position + Vector3.up * 1f);
+        cameraController.SetupTargets(playerTransform, transform);
+        cameraController.ConfigureFollow(playerCameraOffset, playerCameraFollowSpeed);
+        cameraController.ConfigureFixed(fixedCameraOffset, fixedCameraEulerAngles);
         }
 
     private void ApplyControlState () {
@@ -95,6 +103,10 @@ public class RadiconChangeMonoBehaviourScript : MonoBehaviour {
 
         if (radiconController != null) {
             radiconController.enabled = controlRadicon;
+            }
+
+        if (cameraController != null) {
+            cameraController.SetFollowMode(!controlRadicon);
             }
         }
 
