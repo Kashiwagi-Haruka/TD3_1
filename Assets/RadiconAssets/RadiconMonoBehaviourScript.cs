@@ -41,13 +41,17 @@ public class RadiconMonoBehaviourScript : MonoBehaviour {
         }
 
     private void ResolvePortalTargets () {
-        if (topPortalTarget == null) {
+        if (!IsSceneTransform(topPortalTarget)) {
             topPortalTarget = transform;
             }
 
-        if (floatingPortalTarget == null) {
+        if (!IsSceneTransform(floatingPortalTarget)) {
             floatingPortalTarget = transform;
             }
+        }
+
+    private bool IsSceneTransform (Transform target) {
+        return target != null && target.gameObject.scene.IsValid();
         }
 
     private void EnsurePortalPair () {
@@ -107,8 +111,12 @@ public class RadiconMonoBehaviourScript : MonoBehaviour {
         }
 
     private void ReattachPortal (Transform portalTransform, Transform parentTarget, Vector3 localPosition) {
-        if (portalTransform == null || parentTarget == null) {
+        if (portalTransform == null) {
             return;
+            }
+
+        if (!IsSceneTransform(parentTarget)) {
+            parentTarget = transform;
             }
 
         portalTransform.SetParent(parentTarget, false);
