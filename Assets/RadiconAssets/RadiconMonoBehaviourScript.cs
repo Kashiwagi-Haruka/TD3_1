@@ -6,7 +6,8 @@ public class RadiconMonoBehaviourScript : MonoBehaviour {
     [SerializeField] private float acceleration = 14f;
     [SerializeField] private float maxSpeed = 8f;
     [SerializeField] private float reverseSpeedMultiplier = 0.5f;
-    [SerializeField] private float turnSpeed = 110f;
+    [SerializeField] private float lateralAcceleration = 10f;
+    [SerializeField] private float maxLateralSpeed = 5f;
 
     [Header("Stability")]
     [SerializeField] private float dragOnGround = 3.2f;
@@ -198,43 +199,48 @@ public class RadiconMonoBehaviourScript : MonoBehaviour {
         float steer = Input.GetAxis("Horizontal");
         bool isGrounded = IsGrounded();
 
-        ApplyThrottle(throttle, isGrounded);
-        ApplySteering(steer, throttle, isGrounded);
+        ApplyPlanarMovement(steer, throttle, isGrounded);
         ApplyStability(isGrounded);
         }
 
-    private void ApplyThrottle (float throttle, bool isGrounded) {
+    private void ApplyPlanarMovement (float horizontal, float vertical, bool isGrounded) {
         if (!isGrounded) {
             return;
             }
 
-        float directionMultiplier = throttle >= 0f ? 1f : reverseSpeedMultiplier;
+        ApplyForwardMovement(vertical);
+        ApplyLateralMovement(horizontal);
+        }
+
+    private void ApplyForwardMovement (float vertical) {
+        if (Mathf.Abs(vertical) < 0.05f) {
+            return;
+            }
+
+        float directionMultiplier = vertical >= 0f ? 1f : reverseSpeedMultiplier;
         float targetMaxSpeed = maxSpeed * directionMultiplier;
         float forwardSpeed = Vector3.Dot(rb.linearVelocity, transform.forward);
 
-        if (Mathf.Abs(forwardSpeed) >= targetMaxSpeed && Mathf.Sign(forwardSpeed) == Mathf.Sign(throttle)) {
+        if (Mathf.Abs(forwardSpeed) >= targetMaxSpeed && Mathf.Sign(forwardSpeed) == Mathf.Sign(vertical)) {
             return;
             }
 
-        Vector3 force = transform.forward * throttle * acceleration;
+        Vector3 force = transform.forward * vertical * acceleration;
         rb.AddForce(force, ForceMode.Acceleration);
         }
 
-    private void ApplySteering (float steer, float throttle, bool isGrounded) {
-        if (!isGrounded) {
+    private void ApplyLateralMovement (float horizontal) {
+        if (Mathf.Abs(horizontal) < 0.05f) {
             return;
             }
 
-        float movingFactor = Mathf.Clamp01(rb.linearVelocity.magnitude / maxSpeed);
-        float steerFactor = Mathf.Lerp(0.55f, 1f, movingFactor);
-
-        if (Mathf.Abs(throttle) < 0.05f && rb.linearVelocity.magnitude < 0.35f) {
-            steerFactor *= 0.4f;
+        float lateralSpeed = Vector3.Dot(rb.linearVelocity, transform.right);
+        if (Mathf.Abs(lateralSpeed) >= maxLateralSpeed && Mathf.Sign(lateralSpeed) == Mathf.Sign(horizontal)) {
+            return;
             }
 
-        float turnThisFrame = steer * turnSpeed * steerFactor * Time.fixedDeltaTime;
-        Quaternion delta = Quaternion.Euler(0f, turnThisFrame, 0f);
-        rb.MoveRotation(rb.rotation * delta);
+        Vector3 lateralForce = transform.right * horizontal * lateralAcceleration;
+        rb.AddForce(lateralForce, ForceMode.Acceleration);
         }
 
     private void ApplyStability (bool isGrounded) {
