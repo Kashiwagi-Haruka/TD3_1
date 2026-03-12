@@ -26,11 +26,29 @@ public class RadiconChangeMonoBehaviourScript : MonoBehaviour {
     private CameraMonoBehaviourScript cameraController;
 
     private void Awake () {
+        ConfigureSwitchCollision();
         ResolveTargetsIfNeeded();
         EnsureCameraController();
         ConfigureCameraController();
         ApplyControlState();
         SetHandSpriteVisible(false);
+        }
+
+    private void ConfigureSwitchCollision () {
+        Collider[] colliders = GetComponents<Collider>();
+        foreach (Collider currentCollider in colliders) {
+            currentCollider.isTrigger = true;
+            }
+
+        Rigidbody attachedRigidbody = GetComponent<Rigidbody>();
+        if (attachedRigidbody == null) {
+            return;
+            }
+
+        attachedRigidbody.linearVelocity = Vector3.zero;
+        attachedRigidbody.angularVelocity = Vector3.zero;
+        attachedRigidbody.isKinematic = true;
+        attachedRigidbody.useGravity = false;
         }
 
     private void Update () {
