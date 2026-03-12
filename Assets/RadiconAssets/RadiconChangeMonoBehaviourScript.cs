@@ -11,6 +11,9 @@ public class RadiconChangeMonoBehaviourScript : MonoBehaviour {
     [SerializeField] private KeyCode switchKey = KeyCode.E;
     [SerializeField] private float interactDistance = 4f;
 
+    [Header("UI")]
+    [SerializeField] private GameObject handSprite;
+
     [Header("Camera")]
     [SerializeField] private Vector3 playerCameraOffset = new Vector3(0f, 1.8f, -3f);
     [SerializeField] private Vector3 radiconCameraOffset = new Vector3(0f, 1.6f, 1.5f);
@@ -38,6 +41,7 @@ public class RadiconChangeMonoBehaviourScript : MonoBehaviour {
 
         mainCamera = UnityEngine.Camera.main;
         ApplyControlState();
+        SetHandSpriteVisible(false);
         }
 
     private void Update () {
@@ -45,7 +49,10 @@ public class RadiconChangeMonoBehaviourScript : MonoBehaviour {
             mainCamera = UnityEngine.Camera.main;
             }
 
-        if (Input.GetKeyDown(switchKey) && IsInCameraCenter()) {
+        bool isInCameraCenter = IsInCameraCenter();
+        SetHandSpriteVisible(isInCameraCenter);
+
+        if (Input.GetKeyDown(switchKey) && isInCameraCenter) {
             controlRadicon = !controlRadicon;
             ApplyControlState();
             }
@@ -95,5 +102,15 @@ public class RadiconChangeMonoBehaviourScript : MonoBehaviour {
             }
 
         return hit.collider != null && hit.collider.gameObject == gameObject;
+        }
+
+    private void SetHandSpriteVisible (bool isVisible) {
+        if (handSprite == null) {
+            return;
+            }
+
+        if (handSprite.activeSelf != isVisible) {
+            handSprite.SetActive(isVisible);
+            }
         }
     }
