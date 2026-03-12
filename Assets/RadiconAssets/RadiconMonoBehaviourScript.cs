@@ -3,15 +3,15 @@ using UnityEngine;
 [RequireComponent(typeof(Rigidbody))]
 public class RadiconMonoBehaviourScript : MonoBehaviour {
     [Header("Driving")]
-    [SerializeField] private float acceleration = 18f;
-    [SerializeField] private float maxSpeed = 12f;
-    [SerializeField] private float reverseSpeedMultiplier = 0.55f;
-    [SerializeField] private float turnSpeed = 120f;
+    [SerializeField] private float acceleration = 14f;
+    [SerializeField] private float maxSpeed = 8f;
+    [SerializeField] private float reverseSpeedMultiplier = 0.5f;
+    [SerializeField] private float turnSpeed = 110f;
 
     [Header("Stability")]
-    [SerializeField] private float dragOnGround = 2.2f;
-    [SerializeField] private float angularDragOnGround = 4f;
-    [SerializeField] private float downforce = 8f;
+    [SerializeField] private float dragOnGround = 3.2f;
+    [SerializeField] private float angularDragOnGround = 8f;
+    [SerializeField] private bool keepOnGroundPlane = true;
 
     [Header("Ground Check")]
     [SerializeField] private Transform groundCheck;
@@ -27,11 +27,18 @@ public class RadiconMonoBehaviourScript : MonoBehaviour {
     [SerializeField] private Vector3 portalForwardCameraLocalPosition = new Vector3(0f, 0.35f, 0.85f);
     [SerializeField] private float portalCameraFarClipPlane = 80f;
     [SerializeField] private int portalRenderTextureSize = 512;
+    [SerializeField] private Color portalVisibleColor = new Color(0.2f, 0.9f, 1f, 1f);
 
     private Rigidbody rb;
 
     private void Awake () {
         rb = GetComponent<Rigidbody>();
+        rb.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
+
+        if (keepOnGroundPlane) {
+            rb.constraints |= RigidbodyConstraints.FreezePositionY;
+            rb.useGravity = false;
+            }
         ResolvePortalTargets();
         EnsurePortalPair();
 
@@ -174,11 +181,21 @@ public class RadiconMonoBehaviourScript : MonoBehaviour {
             : new Material(unlitTextureShader);
 
         portalMaterial.mainTexture = renderTexture;
+        portalMaterial.color = portalVisibleColor;
+
+        if (portalMaterial.HasProperty("_BaseColor")) {
+            portalMaterial.SetColor("_BaseColor", portalVisibleColor);
+            }
+
+        if (portalMaterial.HasProperty("_Cull")) {
+            portalMaterial.SetFloat("_Cull", (float)UnityEngine.Rendering.CullMode.Off);
+            }
+
         portalRenderer.material = portalMaterial;
         }
     private void FixedUpdate () {
-        float throttle = Input.GetAxisRaw("Vertical");
-        float steer = Input.GetAxisRaw("Horizontal");
+        float throttle = Input.GetAxis("Vertical");
+        float steer = Input.GetAxis("Horizontal");
         bool isGrounded = IsGrounded();
 
         ApplyThrottle(throttle, isGrounded);
@@ -221,12 +238,9 @@ public class RadiconMonoBehaviourScript : MonoBehaviour {
         }
 
     private void ApplyStability (bool isGrounded) {
-        rb.linearDamping = isGrounded ? dragOnGround : 0.1f;
-        rb.angularDamping = isGrounded ? angularDragOnGround : 0.5f;
+        rb.linearDamping = isGrounded ? dragOnGround : 0.4f;
+        rb.angularDamping = isGrounded ? angularDragOnGround : 1f;
 
-        if (isGrounded) {
-            rb.AddForce(-transform.up * downforce, ForceMode.Acceleration);
-            }
         }
 
     private bool IsGrounded () {
