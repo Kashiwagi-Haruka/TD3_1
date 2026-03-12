@@ -8,18 +8,21 @@ public class RadiconChangeMonoBehaviourScript : MonoBehaviour {
     [SerializeField] private Transform radiconTransform;
 
     [Header("Switch")]
-    [SerializeField] private KeyCode switchKey = KeyCode.E;
-    [SerializeField] private float interactDistance = 4f;
+    [SerializeField] private KeyCode activateKey = KeyCode.E;
+    [SerializeField] private KeyCode returnKey = KeyCode.R;
+    [SerializeField] private float touchDistance = 1.35f;
 
     [Header("UI")]
     [SerializeField] private GameObject handSprite;
 
     [Header("Camera")]
     [SerializeField] private Vector3 playerCameraOffset = new Vector3(0f, 1.8f, -3f);
-    [SerializeField] private Vector3 radiconCameraOffset = new Vector3(0f, 1.6f, 1.5f);
-    [SerializeField] private float cameraFollowSpeed = 9f;
+    [SerializeField] private float playerCameraFollowSpeed = 9f;
+    [SerializeField] private Vector3 fixedCameraOffset = new Vector3(0f, 1f, 0f);
+    [SerializeField] private Vector3 fixedCameraEulerAngles = new Vector3(90f, 0f, 0f);
 
     private bool controlRadicon;
+    private bool isPlayerTouching;
     private UnityEngine.Camera mainCamera;
 
     private void Awake () {
@@ -49,11 +52,16 @@ public class RadiconChangeMonoBehaviourScript : MonoBehaviour {
             mainCamera = UnityEngine.Camera.main;
             }
 
-        bool isInCameraCenter = IsInCameraCenter();
-        SetHandSpriteVisible(isInCameraCenter);
+        isPlayerTouching = IsPlayerTouchingRadiconChange();
+        SetHandSpriteVisible(isPlayerTouching && !controlRadicon);
 
-        if (Input.GetKeyDown(switchKey) && isInCameraCenter) {
-            controlRadicon = !controlRadicon;
+        if (!controlRadicon && isPlayerTouching && Input.GetKeyDown(activateKey)) {
+            controlRadicon = true;
+            ApplyControlState();
+            }
+
+        if (controlRadicon && Input.GetKeyDown(returnKey)) {
+            controlRadicon = false;
             ApplyControlState();
             }
         }
@@ -63,21 +71,21 @@ public class RadiconChangeMonoBehaviourScript : MonoBehaviour {
             return;
             }
 
-        Vector3 targetPosition = controlRadicon
-            ? playerTransform.TransformPoint(radiconCameraOffset)
-            : playerTransform.TransformPoint(playerCameraOffset);
+        if (controlRadicon) {
+            mainCamera.transform.position = transform.TransformPoint(fixedCameraOffset);
+            mainCamera.transform.rotation = Quaternion.Euler(fixedCameraEulerAngles);
+            return;
+            }
+
+        Vector3 targetPosition = playerTransform.TransformPoint(playerCameraOffset);
 
         mainCamera.transform.position = Vector3.Lerp(
             mainCamera.transform.position,
             targetPosition,
-            cameraFollowSpeed * Time.deltaTime
+            playerCameraFollowSpeed * Time.deltaTime
         );
 
-        if (controlRadicon && radiconTransform != null) {
-            mainCamera.transform.LookAt(radiconTransform.position + Vector3.up * 0.35f);
-            } else {
-            mainCamera.transform.LookAt(playerTransform.position + Vector3.up * 1f);
-            }
+        mainCamera.transform.LookAt(playerTransform.position + Vector3.up * 1f);
         }
 
     private void ApplyControlState () {
@@ -90,18 +98,14 @@ public class RadiconChangeMonoBehaviourScript : MonoBehaviour {
             }
         }
 
-    private bool IsInCameraCenter () {
-        if (mainCamera == null) {
+    private bool IsPlayerTouchingRadiconChange () {
+        if (playerTransform == null) {
             return false;
             }
 
-        Ray centerRay = mainCamera.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f));
-
-        if (!Physics.Raycast(centerRay, out RaycastHit hit, interactDistance, ~0, QueryTriggerInteraction.Collide)) {
-            return false;
-            }
-
-        return hit.collider != null && hit.collider.gameObject == gameObject;
+        Vector3 horizontalDelta = playerTransform.position - transform.position;
+        horizontalDelta.y = 0f;
+        return horizontalDelta.sqrMagnitude <= touchDistance * touchDistance;
         }
 
     private void SetHandSpriteVisible (bool isVisible) {
