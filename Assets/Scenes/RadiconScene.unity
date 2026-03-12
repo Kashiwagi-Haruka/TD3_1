@@ -269,7 +269,7 @@ PrefabInstance:
     - target: {fileID: 3104578008390259591, guid: 54654b7a56c75c3438d6a88825c5d6a4, type: 3}
       propertyPath: handSprite
       value: 
-      objectReference: {fileID: 1601664937}
+      objectReference: {fileID: 49784361}
     - target: {fileID: 3104578008390259591, guid: 54654b7a56c75c3438d6a88825c5d6a4, type: 3}
       propertyPath: playerTransform
       value: 

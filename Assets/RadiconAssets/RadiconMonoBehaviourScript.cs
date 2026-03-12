@@ -67,6 +67,9 @@ public class RadiconMonoBehaviourScript : MonoBehaviour {
             ? CreatePortalSurface("FloatingPortal", floatingPortalTarget, floatingPortalLocalPosition)
             : floatingPortalTransform.gameObject;
 
+        RemovePortalCollider(topPortal);
+        RemovePortalCollider(floatingPortal);
+
         ReattachPortal(topPortal.transform, topPortalTarget, topPortalLocalPosition);
         ReattachPortal(floatingPortal.transform, floatingPortalTarget, floatingPortalLocalPosition);
 
@@ -97,17 +100,28 @@ public class RadiconMonoBehaviourScript : MonoBehaviour {
         }
 
     private GameObject CreatePortalSurface (string portalName, Transform parentTarget, Vector3 localPosition) {
-        GameObject portalObject = GameObject.CreatePrimitive(PrimitiveType.Quad);
-        portalObject.name = portalName;
+        GameObject portalObject = new GameObject(portalName);
+        MeshFilter meshFilter = portalObject.AddComponent<MeshFilter>();
+        portalObject.AddComponent<MeshRenderer>();
+
+        Mesh quadMesh = Resources.GetBuiltinResource<Mesh>("Quad.fbx");
+        if (quadMesh != null) {
+            meshFilter.sharedMesh = quadMesh;
+            }
 
         ReattachPortal(portalObject.transform, parentTarget, localPosition);
+        return portalObject;
+        }
+
+    private void RemovePortalCollider (GameObject portalObject) {
+        if (portalObject == null) {
+            return;
+            }
 
         Collider portalCollider = portalObject.GetComponent<Collider>();
         if (portalCollider != null) {
             Destroy(portalCollider);
             }
-
-        return portalObject;
         }
 
     private void ReattachPortal (Transform portalTransform, Transform parentTarget, Vector3 localPosition) {
