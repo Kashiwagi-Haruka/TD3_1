@@ -197,6 +197,8 @@ public class RadiconMonoBehaviourScript : MonoBehaviour {
         portalRenderer.material = portalMaterial;
         }
     private void FixedUpdate () {
+        EnforceYawOnlyRotation();
+
         float throttle = Input.GetAxisRaw("Vertical");
         float steer = Input.GetAxisRaw("Horizontal");
         bool isGrounded = IsGrounded();
@@ -204,6 +206,14 @@ public class RadiconMonoBehaviourScript : MonoBehaviour {
         ApplyPlanarMovement(throttle, isGrounded);
         ApplySteering(steer, isGrounded);
         ApplyStability(isGrounded);
+        }
+
+    private void EnforceYawOnlyRotation () {
+        Vector3 currentEulerAngles = rb.rotation.eulerAngles;
+        rb.MoveRotation(Quaternion.Euler(0f, currentEulerAngles.y, 0f));
+
+        Vector3 angularVelocity = rb.angularVelocity;
+        rb.angularVelocity = new Vector3(0f, angularVelocity.y, 0f);
         }
 
     private void ApplyPlanarMovement (float throttle, bool isGrounded) {
