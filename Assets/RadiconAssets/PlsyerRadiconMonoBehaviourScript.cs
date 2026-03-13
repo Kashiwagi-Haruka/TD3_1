@@ -1,3 +1,5 @@
+using System.Collections;
+using TMPro;
 using UnityEngine;
 
 public class PlsyerRadiconMonoBehaviourScript : MonoBehaviour {
@@ -13,10 +15,19 @@ public class PlsyerRadiconMonoBehaviourScript : MonoBehaviour {
     public float maxPitch = 75f;
     public bool lockCursor = true;
 
+    [Header("Key & Door")]
+    [SerializeField] private KeyCode interactKey = KeyCode.E;
+    [SerializeField] private float interactRange = 1.2f;
+    [SerializeField] private TMP_Text stageClearText;
+    [SerializeField] private TMP_Text keyDoorText;
+    [SerializeField] private float keyDoorTextDuration = 2f;
+
     float pitch;
     float yaw;
     float verticalVelocity;
     CharacterController characterController;
+    bool hasKey;
+    Coroutine keyDoorTextCoroutine;
 
     void Start () {
         characterController = GetComponent<CharacterController>();
@@ -40,11 +51,15 @@ public class PlsyerRadiconMonoBehaviourScript : MonoBehaviour {
             Cursor.lockState = CursorLockMode.Locked;
             Cursor.visible = false;
             }
+
+        ResolveUIReferences();
+        HideTexts();
         }
 
     void Update () {
         HandleLook();
         HandleMove();
+        HandleKeyDoorInteraction();
         }
 
     void HandleLook () {
@@ -89,6 +104,108 @@ public class PlsyerRadiconMonoBehaviourScript : MonoBehaviour {
             characterController.Move(velocity * Time.deltaTime);
             } else {
             transform.position += move * Time.deltaTime;
+            }
+        }
+
+    void HandleKeyDoorInteraction () {
+        if (!Input.GetKeyDown(interactKey)) {
+            return;
+            }
+
+        bool isTouchingKey = TryGetNearbyObject("Kagi", out GameObject keyObject);
+        bool isTouchingDoor = IsTouchingDoor();
+
+        if (isTouchingKey && !hasKey && keyObject != null) {
+            hasKey = true;
+            keyObject.SetActive(false);
+            HideTexts();
+            return;
+            }
+
+        if (isTouchingDoor && hasKey) {
+            SetStageClearVisible(true);
+            SetKeyDoorVisible(false);
+            return;
+            }
+
+        if (isTouchingDoor && !hasKey) {
+            SetStageClearVisible(false);
+            ShowKeyDoorTemporarily();
+            return;
+            }
+
+        HideTexts();
+        }
+
+    bool IsTouchingDoor () {
+        return TryGetNearbyObject("Door", out _);
+        }
+
+    bool TryGetNearbyObject (string nameFragment, out GameObject foundObject) {
+        Vector3 center = transform.position + Vector3.up * 0.5f;
+        Collider[] nearby = Physics.OverlapSphere(center, interactRange, ~0, QueryTriggerInteraction.Collide);
+
+        foreach (Collider current in nearby) {
+            if (current == null) {
+                continue;
+                }
+
+            GameObject target = current.gameObject;
+            if (target.name.Contains(nameFragment)) {
+                foundObject = target;
+                return true;
+                }
+            }
+
+        foundObject = null;
+        return false;
+        }
+
+    void ResolveUIReferences () {
+        if (stageClearText == null) {
+            GameObject stageClearObject = GameObject.Find("StageClearText");
+            if (stageClearObject != null) {
+                stageClearText = stageClearObject.GetComponent<TMP_Text>();
+                }
+            }
+
+        if (keyDoorText == null) {
+            GameObject keyDoorObject = GameObject.Find("KeyDoorText");
+            if (keyDoorObject != null) {
+                keyDoorText = keyDoorObject.GetComponent<TMP_Text>();
+                }
+            }
+        }
+
+    void HideTexts () {
+        SetStageClearVisible(false);
+        SetKeyDoorVisible(false);
+        }
+
+    void ShowKeyDoorTemporarily () {
+        if (keyDoorTextCoroutine != null) {
+            StopCoroutine(keyDoorTextCoroutine);
+            }
+
+        keyDoorTextCoroutine = StartCoroutine(ShowKeyDoorCoroutine());
+        }
+
+    IEnumerator ShowKeyDoorCoroutine () {
+        SetKeyDoorVisible(true);
+        yield return new WaitForSeconds(keyDoorTextDuration);
+        SetKeyDoorVisible(false);
+        keyDoorTextCoroutine = null;
+        }
+
+    void SetStageClearVisible (bool isVisible) {
+        if (stageClearText != null && stageClearText.gameObject.activeSelf != isVisible) {
+            stageClearText.gameObject.SetActive(isVisible);
+            }
+        }
+
+    void SetKeyDoorVisible (bool isVisible) {
+        if (keyDoorText != null && keyDoorText.gameObject.activeSelf != isVisible) {
+            keyDoorText.gameObject.SetActive(isVisible);
             }
         }
     }
