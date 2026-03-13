@@ -175,6 +175,18 @@ PrefabInstance:
       propertyPath: viewPivot
       value: 
       objectReference: {fileID: 5255246590540325233, guid: 77b6c669e02f0b54f84afd25d7c52de3, type: 3}
+    - target: {fileID: 7883831151231201142, guid: 77b6c669e02f0b54f84afd25d7c52de3, type: 3}
+      propertyPath: keyDoorText
+      value: 
+      objectReference: {fileID: 1287183242}
+    - target: {fileID: 7883831151231201142, guid: 77b6c669e02f0b54f84afd25d7c52de3, type: 3}
+      propertyPath: closeDoorText
+      value: 
+      objectReference: {fileID: 1382650608}
+    - target: {fileID: 7883831151231201142, guid: 77b6c669e02f0b54f84afd25d7c52de3, type: 3}
+      propertyPath: stageClearText
+      value: 
+      objectReference: {fileID: 889843078}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []

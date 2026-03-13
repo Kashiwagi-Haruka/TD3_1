@@ -28,7 +28,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2449530727698053730}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.013442966, y: -0.9715161, z: 0.2296559, w: 0.05686794}
+  m_LocalRotation: {x: 0.164473, y: -0.83230597, z: -0.41225466, w: -0.33205655}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -112,7 +112,9 @@ MonoBehaviour:
   interactRange: 1.2
   stageClearText: {fileID: 0}
   keyDoorText: {fileID: 0}
+  closeDoorText: {fileID: 0}
   keyDoorTextDuration: 2
+  closeDoorTextDuration: 2
 --- !u!136 &-6855922142296944444
 CapsuleCollider:
   m_ObjectHideFlags: 0

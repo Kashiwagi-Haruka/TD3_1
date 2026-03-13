@@ -20,7 +20,9 @@ public class PlsyerRadiconMonoBehaviourScript : MonoBehaviour {
     [SerializeField] private float interactRange = 1.2f;
     [SerializeField] private TMP_Text stageClearText;
     [SerializeField] private TMP_Text keyDoorText;
+    [SerializeField] private TMP_Text closeDoorText;
     [SerializeField] private float keyDoorTextDuration = 2f;
+    [SerializeField] private float closeDoorTextDuration = 2f;
 
     float pitch;
     float yaw;
@@ -28,6 +30,7 @@ public class PlsyerRadiconMonoBehaviourScript : MonoBehaviour {
     CharacterController characterController;
     bool hasKey;
     Coroutine keyDoorTextCoroutine;
+    Coroutine closeDoorTextCoroutine;
 
     void Start () {
         characterController = GetComponent<CharacterController>();
@@ -114,6 +117,20 @@ public class PlsyerRadiconMonoBehaviourScript : MonoBehaviour {
 
         bool isTouchingKey = TryGetNearbyObject("Kagi", out GameObject keyObject);
         bool isTouchingDoor = IsTouchingDoor();
+        bool isTouchingCloseDoor = IsTouchingCloseDoor();
+
+        if (isTouchingCloseDoor) {
+            SetStageClearVisible(false);
+            SetKeyDoorVisible(false);
+
+            if (HasActiveBlock()) {
+                ShowCloseDoorTemporarily();
+                } else {
+                SetCloseDoorVisible(false);
+                }
+
+            return;
+            }
 
         if (isTouchingKey && !hasKey && keyObject != null) {
             hasKey = true;
@@ -139,6 +156,22 @@ public class PlsyerRadiconMonoBehaviourScript : MonoBehaviour {
 
     bool IsTouchingDoor () {
         return TryGetNearbyObject("Door", out _);
+        }
+
+    bool IsTouchingCloseDoor () {
+        return TryGetNearbyObject("CloseDoor", out _);
+        }
+
+    bool HasActiveBlock () {
+        PushBlock[] blocks = FindObjectsOfType<PushBlock>(true);
+
+        foreach (PushBlock block in blocks) {
+            if (block != null && block.gameObject.activeInHierarchy) {
+                return true;
+                }
+            }
+
+        return false;
         }
 
     bool TryGetNearbyObject (string nameFragment, out GameObject foundObject) {
@@ -175,11 +208,19 @@ public class PlsyerRadiconMonoBehaviourScript : MonoBehaviour {
                 keyDoorText = keyDoorObject.GetComponent<TMP_Text>();
                 }
             }
+
+        if (closeDoorText == null) {
+            GameObject closeDoorObject = GameObject.Find("CloseDoorText");
+            if (closeDoorObject != null) {
+                closeDoorText = closeDoorObject.GetComponent<TMP_Text>();
+                }
+            }
         }
 
     void HideTexts () {
         SetStageClearVisible(false);
         SetKeyDoorVisible(false);
+        SetCloseDoorVisible(false);
         }
 
     void ShowKeyDoorTemporarily () {
@@ -197,6 +238,21 @@ public class PlsyerRadiconMonoBehaviourScript : MonoBehaviour {
         keyDoorTextCoroutine = null;
         }
 
+    void ShowCloseDoorTemporarily () {
+        if (closeDoorTextCoroutine != null) {
+            StopCoroutine(closeDoorTextCoroutine);
+            }
+
+        closeDoorTextCoroutine = StartCoroutine(ShowCloseDoorCoroutine());
+        }
+
+    IEnumerator ShowCloseDoorCoroutine () {
+        SetCloseDoorVisible(true);
+        yield return new WaitForSeconds(closeDoorTextDuration);
+        SetCloseDoorVisible(false);
+        closeDoorTextCoroutine = null;
+        }
+
     void SetStageClearVisible (bool isVisible) {
         if (stageClearText != null && stageClearText.gameObject.activeSelf != isVisible) {
             stageClearText.gameObject.SetActive(isVisible);
@@ -206,6 +262,12 @@ public class PlsyerRadiconMonoBehaviourScript : MonoBehaviour {
     void SetKeyDoorVisible (bool isVisible) {
         if (keyDoorText != null && keyDoorText.gameObject.activeSelf != isVisible) {
             keyDoorText.gameObject.SetActive(isVisible);
+            }
+        }
+
+    void SetCloseDoorVisible (bool isVisible) {
+        if (closeDoorText != null && closeDoorText.gameObject.activeSelf != isVisible) {
+            closeDoorText.gameObject.SetActive(isVisible);
             }
         }
     }
