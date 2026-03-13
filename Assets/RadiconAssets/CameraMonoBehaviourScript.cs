@@ -11,8 +11,10 @@ public class CameraMonoBehaviourScript : MonoBehaviour {
     [SerializeField] private Transform fixedAnchor;
     [SerializeField] private Vector3 fixedOffset = new Vector3(0f, 1f, 0f);
     [SerializeField] private Vector3 fixedEulerAngles = new Vector3(90f, 0f, 0f);
+    [SerializeField] private float fixedZRotationOffset = 180f;
 
     [SerializeField] private bool startInFollowMode = true;
+
 
     private bool isFollowMode;
 
@@ -88,6 +90,8 @@ public class CameraMonoBehaviourScript : MonoBehaviour {
             }
 
         transform.position = fixedAnchor.TransformPoint(fixedOffset);
-        transform.rotation = Quaternion.Euler(fixedEulerAngles);
+        Quaternion baseRotation = Quaternion.Euler(fixedEulerAngles);
+        Quaternion zOffsetRotation = Quaternion.Euler(0f, 0f, fixedZRotationOffset);
+        transform.rotation = baseRotation * zOffsetRotation;
         }
     }
