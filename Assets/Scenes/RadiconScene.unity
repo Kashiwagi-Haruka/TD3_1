@@ -288,7 +288,7 @@ PrefabInstance:
       objectReference: {fileID: 645157241}
     - target: {fileID: 3104578008390259591, guid: 54654b7a56c75c3438d6a88825c5d6a4, type: 3}
       propertyPath: fixedCameraOffset.y
-      value: 5
+      value: 1.4
       objectReference: {fileID: 0}
     - target: {fileID: 7655714541163842895, guid: 54654b7a56c75c3438d6a88825c5d6a4, type: 3}
       propertyPath: m_LocalPosition.x
@@ -1534,8 +1534,8 @@ MonoBehaviour:
   followOffset: {x: 0, y: 1.8, z: -3}
   followSpeed: 9
   lookAtOffset: {x: 0, y: 1, z: 0}
-  fixedAnchor: {fileID: 0}
-  fixedOffset: {x: 0, y: 1, z: 0}
+  fixedAnchor: {fileID: 7655714541163842895, guid: 54654b7a56c75c3438d6a88825c5d6a4, type: 3}
+  fixedOffset: {x: 0, y: 0.2, z: 0}
   fixedEulerAngles: {x: 90, y: 0, z: 0}
   fixedZRotationOffset: 180
   startInFollowMode: 1
@@ -2236,15 +2236,15 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 1102903775838613125, guid: c72afac3483d746429b3b4aca814172f, type: 3}
       propertyPath: m_LocalScale.x
-      value: 0.2
+      value: 0.4
       objectReference: {fileID: 0}
     - target: {fileID: 1102903775838613125, guid: c72afac3483d746429b3b4aca814172f, type: 3}
       propertyPath: m_LocalScale.y
-      value: 0.5
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 1102903775838613125, guid: c72afac3483d746429b3b4aca814172f, type: 3}
       propertyPath: m_LocalScale.z
-      value: 0.2
+      value: 0.4
       objectReference: {fileID: 0}
     - target: {fileID: 1102903775838613125, guid: c72afac3483d746429b3b4aca814172f, type: 3}
       propertyPath: m_LocalPosition.x
@@ -2252,7 +2252,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1102903775838613125, guid: c72afac3483d746429b3b4aca814172f, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0.557
+      value: 0.985
       objectReference: {fileID: 0}
     - target: {fileID: 1102903775838613125, guid: c72afac3483d746429b3b4aca814172f, type: 3}
       propertyPath: m_LocalPosition.z
@@ -2285,6 +2285,10 @@ PrefabInstance:
     - target: {fileID: 1102903775838613125, guid: c72afac3483d746429b3b4aca814172f, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1102903775838613125, guid: c72afac3483d746429b3b4aca814172f, type: 3}
+      propertyPath: m_ConstrainProportionsScale
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4733024630477285179, guid: c72afac3483d746429b3b4aca814172f, type: 3}
       propertyPath: m_Name
