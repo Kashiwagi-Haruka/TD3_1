@@ -3,13 +3,13 @@ using UnityEngine;
 public class CameraMonoBehaviourScript : MonoBehaviour {
     [Header("Follow (Player)")]
     [SerializeField] private Transform followTarget;
-    [SerializeField] private Vector3 followOffset = new Vector3(0f, 1.8f, -3f);
+    [SerializeField] private Vector3 followOffset = new Vector3(0f, 1.1f, -3f);
     [SerializeField] private float followSpeed = 9f;
     [SerializeField] private Vector3 lookAtOffset = new Vector3(0f, 1f, 0f);
 
     [Header("Fixed (Radicon)")]
     [SerializeField] private Transform fixedAnchor;
-    [SerializeField] private Vector3 fixedOffset = new Vector3(0f, 1f, 0f);
+    [SerializeField] private Vector3 fixedOffset = new Vector3(0f, 0.5f, 0f);
     [SerializeField] private Vector3 fixedEulerAngles = new Vector3(90f, 0f, 0f);
     [SerializeField] private float fixedZRotationOffset = 180f;
 

@@ -240,7 +240,7 @@ public class RadiconMonoBehaviourScript : MonoBehaviour {
         EnforceYawOnlyRotation();
 
         float throttle = Input.GetAxisRaw("Vertical");
-        float steer = Input.GetAxisRaw("Horizontal");
+        float steer = -Input.GetAxisRaw("Horizontal");
         bool isGrounded = IsGrounded();
 
         ApplyPlanarMovement(throttle, isGrounded);
