@@ -32,7 +32,16 @@ public class RadiconMonoBehaviourScript : MonoBehaviour {
     [SerializeField] private Color portalVisibleColor = new Color(0.2f, 0.9f, 1f, 1f);
     [SerializeField] private int portalNoiseTextureSize = 128;
     [SerializeField] private float portalNoiseScrollSpeed = 1.2f;
+    [Header("Interaction")]
+    [SerializeField] private KeyCode interactKey = KeyCode.E;
+    [SerializeField] private float candlePickupRange = 1.5f;
+    [SerializeField] private float blockCheckRange = 1.3f;
+    [SerializeField] private float interactionHeightOffset = 0.35f;
+    [SerializeField] private int particleBurstCount = 25;
+    [SerializeField] private float particleLifetime = 0.6f;
+    [SerializeField] private float particleSpeed = 2.5f;
 
+    private RousokuMonoBehaviourScript heldCandle;
     private Rigidbody rb;
     private MeshRenderer[] portalRenderers = System.Array.Empty<MeshRenderer>();
     private bool isPortalNoiseActive;
@@ -156,7 +165,7 @@ public class RadiconMonoBehaviourScript : MonoBehaviour {
             }
         }
 
-    private void Update () {
+    private void UpdatePortalNoise () {
         if (!isPortalNoiseActive || portalRenderers.Length == 0) {
             return;
             }
@@ -265,6 +274,95 @@ public class RadiconMonoBehaviourScript : MonoBehaviour {
 
         portalRenderer.material = portalMaterial;
         }
+    private void Update () {
+        UpdatePortalNoise();
+        HandleInteract();
+        }
+
+    private void HandleInteract () {
+        if (!Input.GetKeyDown(interactKey)) {
+            return;
+            }
+
+        if (heldCandle == null) {
+            TryPickupCandle();
+            return;
+            }
+
+        if (IsTouchingBlock(out Vector3 blockPoint)) {
+            SpawnRedParticles(blockPoint);
+            }
+        }
+
+    private void TryPickupCandle () {
+        Vector3 center = transform.position + Vector3.up * interactionHeightOffset;
+        Collider[] nearbyColliders = Physics.OverlapSphere(center, candlePickupRange, ~0, QueryTriggerInteraction.Ignore);
+
+        float closestDistance = float.MaxValue;
+        RousokuMonoBehaviourScript nearestCandle = null;
+
+        foreach (Collider nearbyCollider in nearbyColliders) {
+            RousokuMonoBehaviourScript candle = nearbyCollider.GetComponentInParent<RousokuMonoBehaviourScript>();
+            if (candle == null || candle.IsHeld) {
+                continue;
+                }
+
+            float distance = Vector3.Distance(center, nearbyCollider.ClosestPoint(center));
+            if (distance < closestDistance) {
+                closestDistance = distance;
+                nearestCandle = candle;
+                }
+            }
+
+        if (nearestCandle == null) {
+            return;
+            }
+
+        nearestCandle.AttachTo(transform);
+        heldCandle = nearestCandle;
+        }
+
+    private bool IsTouchingBlock (out Vector3 hitPoint) {
+        Vector3 center = transform.position + Vector3.up * interactionHeightOffset;
+        Collider[] nearbyColliders = Physics.OverlapSphere(center, blockCheckRange, ~0, QueryTriggerInteraction.Ignore);
+
+        foreach (Collider nearbyCollider in nearbyColliders) {
+            if (!nearbyCollider.gameObject.name.Contains("Block")) {
+                continue;
+                }
+
+            hitPoint = nearbyCollider.ClosestPoint(center);
+            return true;
+            }
+
+        hitPoint = center + transform.forward * 0.2f;
+        return false;
+        }
+
+    private void SpawnRedParticles (Vector3 position) {
+        GameObject particleObject = new GameObject("RedInteractionParticles");
+        particleObject.transform.position = position;
+
+        ParticleSystem particleSystem = particleObject.AddComponent<ParticleSystem>();
+        ParticleSystem.MainModule main = particleSystem.main;
+        main.startColor = Color.red;
+        main.startLifetime = particleLifetime;
+        main.startSpeed = particleSpeed;
+        main.startSize = 0.12f;
+        main.simulationSpace = ParticleSystemSimulationSpace.World;
+        main.maxParticles = particleBurstCount;
+
+        ParticleSystem.EmissionModule emission = particleSystem.emission;
+        emission.rateOverTime = 0f;
+
+        ParticleSystem.ShapeModule shape = particleSystem.shape;
+        shape.shapeType = ParticleSystemShapeType.Sphere;
+        shape.radius = 0.08f;
+
+        particleSystem.Emit(particleBurstCount);
+        Destroy(particleObject, particleLifetime + 0.4f);
+        }
+
     private void FixedUpdate () {
         EnforceYawOnlyRotation();
 
@@ -276,7 +374,6 @@ public class RadiconMonoBehaviourScript : MonoBehaviour {
         ApplySteering(steer, isGrounded);
         ApplyStability(isGrounded);
         }
-
     private void EnforceYawOnlyRotation () {
         Vector3 currentEulerAngles = rb.rotation.eulerAngles;
         rb.MoveRotation(Quaternion.Euler(0f, currentEulerAngles.y, 0f));
