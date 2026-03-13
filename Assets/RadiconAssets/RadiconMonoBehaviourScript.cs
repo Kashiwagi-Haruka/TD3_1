@@ -5,8 +5,8 @@ public class RadiconMonoBehaviourScript : MonoBehaviour {
     [Header("Driving")]
     [SerializeField] private float acceleration = 20f;
     [SerializeField] private float maxSpeed = 8f;
-    [SerializeField] private float turnSpeed = 1f;
-    [SerializeField] private bool useCameraRelativeInput = true;
+    [SerializeField] private float turnSpeed = 120f;
+    [SerializeField] private float lateralGrip = 12f;
 
     [Header("Stability")]
     [SerializeField] private float dragOnGround = 3.2f;
@@ -32,13 +32,11 @@ public class RadiconMonoBehaviourScript : MonoBehaviour {
     [SerializeField] private Color portalVisibleColor = new Color(0.2f, 0.9f, 1f, 1f);
 
     private Rigidbody rb;
-    private Transform mainCameraTransform;
 
     private void Awake () {
         rb = GetComponent<Rigidbody>();
         rb.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
         rb.maxAngularVelocity = maxYawAngularSpeed;
-        mainCameraTransform = UnityEngine.Camera.main == null ? null : UnityEngine.Camera.main.transform;
 
         if (keepOnGroundPlane) {
             rb.constraints |= RigidbodyConstraints.FreezePositionY;
@@ -199,70 +197,46 @@ public class RadiconMonoBehaviourScript : MonoBehaviour {
         portalRenderer.material = portalMaterial;
         }
     private void FixedUpdate () {
-        float throttle = Input.GetAxis("Vertical");
-        float steer = Input.GetAxis("Horizontal");
+        float throttle = Input.GetAxisRaw("Vertical");
+        float steer = Input.GetAxisRaw("Horizontal");
         bool isGrounded = IsGrounded();
 
-        ApplyPlanarMovement(steer, throttle, isGrounded);
+        ApplyPlanarMovement(throttle, isGrounded);
+        ApplySteering(steer, isGrounded);
         ApplyStability(isGrounded);
         }
 
-    private void ApplyPlanarMovement (float horizontal, float vertical, bool isGrounded) {
+    private void ApplyPlanarMovement (float throttle, bool isGrounded) {
         if (!isGrounded) {
             return;
             }
 
-        Vector3 inputDirection = GetInputDirection(horizontal, vertical);
+        Vector3 forward = Vector3.ProjectOnPlane(transform.forward, Vector3.up).normalized;
         Vector3 planarVelocity = new Vector3(rb.linearVelocity.x, 0f, rb.linearVelocity.z);
-        Vector3 targetVelocity = inputDirection * maxSpeed;
-        Vector3 velocityDelta = targetVelocity - planarVelocity;
 
-        if (velocityDelta.sqrMagnitude > 0.0001f) {
-            Vector3 accelerationStep = Vector3.ClampMagnitude(velocityDelta / Time.fixedDeltaTime, acceleration);
-            rb.AddForce(accelerationStep, ForceMode.Acceleration);
+        float currentForwardSpeed = Vector3.Dot(planarVelocity, forward);
+        float targetForwardSpeed = throttle * maxSpeed;
+        float forwardSpeedDelta = targetForwardSpeed - currentForwardSpeed;
+
+        float maxForwardAccelerationStep = acceleration * Time.fixedDeltaTime;
+        float forwardAcceleration = Mathf.Clamp(forwardSpeedDelta, -maxForwardAccelerationStep, maxForwardAccelerationStep) / Time.fixedDeltaTime;
+        rb.AddForce(forward * forwardAcceleration, ForceMode.Acceleration);
+
+        Vector3 lateralVelocity = planarVelocity - forward * currentForwardSpeed;
+        if (lateralVelocity.sqrMagnitude > 0.0001f) {
+            Vector3 lateralCorrection = Vector3.ClampMagnitude(-lateralVelocity / Time.fixedDeltaTime, lateralGrip);
+            rb.AddForce(lateralCorrection, ForceMode.Acceleration);
             }
-
-        RotateTowardsMoveDirection(inputDirection);
         }
 
-    private Vector3 GetInputDirection (float horizontal, float vertical) {
-        Vector3 rawInput = new Vector3(horizontal, 0f, vertical);
-        if (rawInput.sqrMagnitude < 0.0025f) {
-            return Vector3.zero;
-            }
-
-        if (useCameraRelativeInput) {
-            if (mainCameraTransform == null && UnityEngine.Camera.main != null) {
-                mainCameraTransform = UnityEngine.Camera.main.transform;
-                }
-
-            if (mainCameraTransform != null) {
-                Vector3 cameraForward = Vector3.ProjectOnPlane(mainCameraTransform.forward, Vector3.up);
-                if (cameraForward.sqrMagnitude < 0.0001f) {
-                    cameraForward = Vector3.ProjectOnPlane(transform.forward, Vector3.up);
-                    }
-
-                if (cameraForward.sqrMagnitude < 0.0001f) {
-                    cameraForward = Vector3.forward;
-                    }
-
-                cameraForward.Normalize();
-                Vector3 cameraRight = Vector3.Cross(Vector3.up, cameraForward).normalized;
-                return ( cameraRight * horizontal + cameraForward * vertical ).normalized;
-                }
-            }
-
-        return rawInput.normalized;
-        }
-
-    private void RotateTowardsMoveDirection (Vector3 inputDirection) {
-        if (inputDirection.sqrMagnitude < 0.0001f) {
+    private void ApplySteering (float steer, bool isGrounded) {
+        if (!isGrounded || Mathf.Abs(steer) < 0.0001f) {
             return;
             }
 
-        Quaternion targetRotation = Quaternion.LookRotation(inputDirection, Vector3.up);
-        Quaternion smoothedRotation = Quaternion.Slerp(rb.rotation, targetRotation, turnSpeed * Time.fixedDeltaTime);
-        rb.MoveRotation(smoothedRotation);
+        float rotationStep = steer * turnSpeed * Time.fixedDeltaTime;
+        Quaternion nextRotation = rb.rotation * Quaternion.Euler(0f, rotationStep, 0f);
+        rb.MoveRotation(nextRotation);
         }
 
     private void ApplyStability (bool isGrounded) {
