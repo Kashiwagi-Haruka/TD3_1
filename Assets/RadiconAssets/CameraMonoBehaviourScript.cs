@@ -55,14 +55,20 @@ public class CameraMonoBehaviourScript : MonoBehaviour {
         }
 
     private void ResolveFollowTargetIfNeeded () {
-        if (followTarget != null) {
+        if (IsSceneTransform(followTarget)) {
             return;
             }
+
+        followTarget = null;
 
         PlsyerRadiconMonoBehaviourScript player = FindAnyObjectByType<PlsyerRadiconMonoBehaviourScript>();
         if (player != null) {
             followTarget = player.transform;
             }
+        }
+
+    private bool IsSceneTransform (Transform target) {
+        return target != null && target.gameObject.scene.IsValid() && target.gameObject.scene.isLoaded;
         }
 
     private void UpdateFollowCamera () {

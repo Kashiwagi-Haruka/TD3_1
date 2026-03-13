@@ -18,19 +18,38 @@ public class RadiconChangeMonoBehaviourScript : MonoBehaviour {
     [Header("Camera")]
     [SerializeField] private Vector3 playerCameraOffset = new Vector3(0f, 1.8f, -3f);
     [SerializeField] private float playerCameraFollowSpeed = 9f;
-    [SerializeField] private Vector3 fixedCameraOffset = new Vector3(0f, 1f, 0f);
+    [SerializeField] private Vector3 fixedCameraOffset = new Vector3(0f, 10.0f, 0f);
     [SerializeField] private Vector3 fixedCameraEulerAngles = new Vector3(90f, 0f, 0f);
+    private Renderer[] playerRenderers = System.Array.Empty<Renderer>();
 
     private bool controlRadicon;
     private bool isPlayerTouching;
     private CameraMonoBehaviourScript cameraController;
 
     private void Awake () {
+        ConfigureSwitchCollision();
         ResolveTargetsIfNeeded();
         EnsureCameraController();
         ConfigureCameraController();
         ApplyControlState();
         SetHandSpriteVisible(false);
+        }
+
+    private void ConfigureSwitchCollision () {
+        Collider[] colliders = GetComponents<Collider>();
+        foreach (Collider currentCollider in colliders) {
+            currentCollider.isTrigger = true;
+            }
+
+        Rigidbody attachedRigidbody = GetComponent<Rigidbody>();
+        if (attachedRigidbody == null) {
+            return;
+            }
+
+        attachedRigidbody.linearVelocity = Vector3.zero;
+        attachedRigidbody.angularVelocity = Vector3.zero;
+        attachedRigidbody.isKinematic = true;
+        attachedRigidbody.useGravity = false;
         }
 
     private void Update () {
@@ -57,21 +76,39 @@ public class RadiconChangeMonoBehaviourScript : MonoBehaviour {
         }
 
     private void ResolveTargetsIfNeeded () {
-        if (playerController == null) {
+        if (!IsSceneComponent(playerController)) {
             playerController = FindAnyObjectByType<PlsyerRadiconMonoBehaviourScript>();
             }
 
-        if (radiconController == null) {
+        if (!IsSceneComponent(radiconController)) {
             radiconController = FindAnyObjectByType<RadiconMonoBehaviourScript>();
             }
 
-        if (playerTransform == null && playerController != null) {
+        if (!IsSceneTransform(playerTransform) && playerController != null) {
             playerTransform = playerController.transform;
+            CachePlayerRenderers();
             }
 
-        if (radiconTransform == null && radiconController != null) {
+        if (!IsSceneTransform(radiconTransform) && radiconController != null) {
             radiconTransform = radiconController.transform;
             }
+        }
+
+    private void CachePlayerRenderers () {
+        if (playerTransform == null) {
+            playerRenderers = System.Array.Empty<Renderer>();
+            return;
+            }
+
+        playerRenderers = playerTransform.GetComponentsInChildren<Renderer>(true);
+        }
+
+    private bool IsSceneComponent (MonoBehaviour component) {
+        return component != null && component.gameObject.scene.IsValid() && component.gameObject.scene.isLoaded;
+        }
+
+    private bool IsSceneTransform (Transform target) {
+        return target != null && target.gameObject.scene.IsValid() && target.gameObject.scene.isLoaded;
         }
 
     private void EnsureCameraController () {
@@ -101,12 +138,28 @@ public class RadiconChangeMonoBehaviourScript : MonoBehaviour {
             playerController.enabled = !controlRadicon;
             }
 
+        SetPlayerVisualVisible(!controlRadicon);
+
         if (radiconController != null) {
             radiconController.enabled = controlRadicon;
             }
 
         if (cameraController != null) {
             cameraController.SetFollowMode(!controlRadicon);
+            }
+        }
+
+    private void SetPlayerVisualVisible (bool isVisible) {
+        if (playerRenderers.Length == 0) {
+            CachePlayerRenderers();
+            }
+
+        foreach (Renderer playerRenderer in playerRenderers) {
+            if (playerRenderer == null) {
+                continue;
+                }
+
+            playerRenderer.enabled = isVisible;
             }
         }
 
