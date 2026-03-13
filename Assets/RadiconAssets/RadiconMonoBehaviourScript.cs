@@ -31,9 +31,12 @@ public class RadiconMonoBehaviourScript : MonoBehaviour {
     [SerializeField] private int portalRenderTextureSize = 512;
     [SerializeField] private Color portalVisibleColor = new Color(0.2f, 0.9f, 1f, 1f);
     [SerializeField] private int portalNoiseTextureSize = 128;
+    [SerializeField] private float portalNoiseScrollSpeed = 1.2f;
 
     private Rigidbody rb;
     private MeshRenderer[] portalRenderers = System.Array.Empty<MeshRenderer>();
+    private bool isPortalNoiseActive;
+    private Vector2 portalNoiseOffset;
     private void Awake () {
         rb = GetComponent<Rigidbody>();
         rb.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
@@ -132,8 +135,11 @@ public class RadiconMonoBehaviourScript : MonoBehaviour {
         portalRenderers = new[] { topPortalRenderer, floatingPortalRenderer };
         }
 
+
     public void FillPortalsWithBlackAndWhiteNoise () {
         Texture2D noiseTexture = BuildBlackAndWhiteNoiseTexture();
+        isPortalNoiseActive = true;
+        portalNoiseOffset = Vector2.zero;
 
         foreach (MeshRenderer portalRenderer in portalRenderers) {
             if (portalRenderer == null || portalRenderer.material == null) {
@@ -142,8 +148,31 @@ public class RadiconMonoBehaviourScript : MonoBehaviour {
 
             Material portalMaterial = portalRenderer.material;
             portalMaterial.mainTexture = noiseTexture;
+            portalMaterial.mainTextureOffset = Vector2.zero;
             if (portalMaterial.HasProperty("_BaseMap")) {
                 portalMaterial.SetTexture("_BaseMap", noiseTexture);
+                portalMaterial.SetTextureOffset("_BaseMap", Vector2.zero);
+                }
+            }
+        }
+
+    private void Update () {
+        if (!isPortalNoiseActive || portalRenderers.Length == 0) {
+            return;
+            }
+
+        portalNoiseOffset.x += portalNoiseScrollSpeed * Time.deltaTime;
+        portalNoiseOffset.y += portalNoiseScrollSpeed * 0.35f * Time.deltaTime;
+
+        foreach (MeshRenderer portalRenderer in portalRenderers) {
+            if (portalRenderer == null || portalRenderer.material == null) {
+                continue;
+                }
+
+            Material portalMaterial = portalRenderer.material;
+            portalMaterial.mainTextureOffset = portalNoiseOffset;
+            if (portalMaterial.HasProperty("_BaseMap")) {
+                portalMaterial.SetTextureOffset("_BaseMap", portalNoiseOffset);
                 }
             }
         }

@@ -12,7 +12,7 @@ public class EnemyMonoBehaviourScript : MonoBehaviour {
     [Header("Sikai")]
     [SerializeField] Transform sikai;
     [SerializeField] float sikaiForwardOffset = 1.0f;
-    [SerializeField] float sikaiDownOffset = 0.5f;
+    [SerializeField] float sikaiDownOffset = 0.0f;
 
     Vector3 originPosition;
     Vector3 targetPosition;
@@ -90,6 +90,7 @@ public class EnemyMonoBehaviourScript : MonoBehaviour {
             }
         }
 
+
     void UpdateSikaiPosition () {
         ResolveSikaiIfNeeded();
         if (sikai == null) {
@@ -106,5 +107,6 @@ public class EnemyMonoBehaviourScript : MonoBehaviour {
             }
 
         sikai.position = transform.position + forward * sikaiForwardOffset + Vector3.down * sikaiDownOffset;
+        sikai.rotation = Quaternion.LookRotation(-forward, Vector3.up);
         }
     }
