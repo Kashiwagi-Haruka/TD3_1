@@ -3,11 +3,10 @@ using UnityEngine;
 [RequireComponent(typeof(Rigidbody))]
 public class RadiconMonoBehaviourScript : MonoBehaviour {
     [Header("Driving")]
-    [SerializeField] private float acceleration = 14f;
+    [SerializeField] private float acceleration = 20f;
     [SerializeField] private float maxSpeed = 8f;
-    [SerializeField] private float reverseSpeedMultiplier = 0.5f;
-    [SerializeField] private float lateralAcceleration = 10f;
-    [SerializeField] private float maxLateralSpeed = 5f;
+    [SerializeField] private float turnSpeed = 1f;
+    [SerializeField] private bool useCameraRelativeInput = true;
 
     [Header("Stability")]
     [SerializeField] private float dragOnGround = 3.2f;
@@ -31,10 +30,12 @@ public class RadiconMonoBehaviourScript : MonoBehaviour {
     [SerializeField] private Color portalVisibleColor = new Color(0.2f, 0.9f, 1f, 1f);
 
     private Rigidbody rb;
+    private Transform mainCameraTransform;
 
     private void Awake () {
         rb = GetComponent<Rigidbody>();
         rb.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
+        mainCameraTransform = UnityEngine.Camera.main == null ? null : UnityEngine.Camera.main.transform;
 
         if (keepOnGroundPlane) {
             rb.constraints |= RigidbodyConstraints.FreezePositionY;
@@ -208,39 +209,57 @@ public class RadiconMonoBehaviourScript : MonoBehaviour {
             return;
             }
 
-        ApplyForwardMovement(vertical);
-        ApplyLateralMovement(horizontal);
+        Vector3 inputDirection = GetInputDirection(horizontal, vertical);
+        Vector3 planarVelocity = new Vector3(rb.linearVelocity.x, 0f, rb.linearVelocity.z);
+        Vector3 targetVelocity = inputDirection * maxSpeed;
+        Vector3 velocityDelta = targetVelocity - planarVelocity;
+
+        if (velocityDelta.sqrMagnitude > 0.0001f) {
+            Vector3 accelerationStep = Vector3.ClampMagnitude(velocityDelta / Time.fixedDeltaTime, acceleration);
+            rb.AddForce(accelerationStep, ForceMode.Acceleration);
+            }
+
+        RotateTowardsMoveDirection(inputDirection);
         }
 
-    private void ApplyForwardMovement (float vertical) {
-        if (Mathf.Abs(vertical) < 0.05f) {
-            return;
+    private Vector3 GetInputDirection (float horizontal, float vertical) {
+        Vector3 rawInput = new Vector3(horizontal, 0f, vertical);
+        if (rawInput.sqrMagnitude < 0.0025f) {
+            return Vector3.zero;
             }
 
-        float directionMultiplier = vertical >= 0f ? 1f : reverseSpeedMultiplier;
-        float targetMaxSpeed = maxSpeed * directionMultiplier;
-        float forwardSpeed = Vector3.Dot(rb.linearVelocity, transform.forward);
+        if (useCameraRelativeInput) {
+            if (mainCameraTransform == null && UnityEngine.Camera.main != null) {
+                mainCameraTransform = UnityEngine.Camera.main.transform;
+                }
 
-        if (Mathf.Abs(forwardSpeed) >= targetMaxSpeed && Mathf.Sign(forwardSpeed) == Mathf.Sign(vertical)) {
-            return;
+            if (mainCameraTransform != null) {
+                Vector3 cameraForward = Vector3.ProjectOnPlane(mainCameraTransform.forward, Vector3.up);
+                if (cameraForward.sqrMagnitude < 0.0001f) {
+                    cameraForward = Vector3.ProjectOnPlane(transform.forward, Vector3.up);
+                    }
+
+                if (cameraForward.sqrMagnitude < 0.0001f) {
+                    cameraForward = Vector3.forward;
+                    }
+
+                cameraForward.Normalize();
+                Vector3 cameraRight = Vector3.Cross(Vector3.up, cameraForward).normalized;
+                return ( cameraRight * horizontal + cameraForward * vertical ).normalized;
+                }
             }
 
-        Vector3 force = transform.forward * vertical * acceleration;
-        rb.AddForce(force, ForceMode.Acceleration);
+        return rawInput.normalized;
         }
 
-    private void ApplyLateralMovement (float horizontal) {
-        if (Mathf.Abs(horizontal) < 0.05f) {
+    private void RotateTowardsMoveDirection (Vector3 inputDirection) {
+        if (inputDirection.sqrMagnitude < 0.0001f) {
             return;
             }
 
-        float lateralSpeed = Vector3.Dot(rb.linearVelocity, transform.right);
-        if (Mathf.Abs(lateralSpeed) >= maxLateralSpeed && Mathf.Sign(lateralSpeed) == Mathf.Sign(horizontal)) {
-            return;
-            }
-
-        Vector3 lateralForce = transform.right * horizontal * lateralAcceleration;
-        rb.AddForce(lateralForce, ForceMode.Acceleration);
+        Quaternion targetRotation = Quaternion.LookRotation(inputDirection, Vector3.up);
+        Quaternion smoothedRotation = Quaternion.Slerp(rb.rotation, targetRotation, turnSpeed * Time.fixedDeltaTime);
+        rb.MoveRotation(smoothedRotation);
         }
 
     private void ApplyStability (bool isGrounded) {
