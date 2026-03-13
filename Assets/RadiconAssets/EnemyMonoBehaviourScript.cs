@@ -9,16 +9,25 @@ public class EnemyMonoBehaviourScript : MonoBehaviour {
     [SerializeField] float maxIdleTime = 2f;
     [SerializeField] float stopDistance = 0.2f;
 
+    [Header("Sikai")]
+    [SerializeField] Transform sikai;
+    [SerializeField] float sikaiForwardOffset = 1.0f;
+    [SerializeField] float sikaiDownOffset = 0.5f;
+
     Vector3 originPosition;
     Vector3 targetPosition;
     float idleTimer;
 
     void Start () {
         originPosition = transform.position;
+        ResolveSikaiIfNeeded();
+        UpdateSikaiPosition();
         PickNextTarget();
         }
 
     void Update () {
+        UpdateSikaiPosition();
+
         if (idleTimer > 0f) {
             idleTimer -= Time.deltaTime;
             return;
@@ -68,5 +77,34 @@ public class EnemyMonoBehaviourScript : MonoBehaviour {
     void OnDrawGizmosSelected () {
         Gizmos.color = Color.red;
         Gizmos.DrawWireSphere(Application.isPlaying ? originPosition : transform.position, wanderRadius);
+        }
+
+    void ResolveSikaiIfNeeded () {
+        if (sikai != null) {
+            return;
+            }
+
+        Transform child = transform.Find("sikai");
+        if (child != null) {
+            sikai = child;
+            }
+        }
+
+    void UpdateSikaiPosition () {
+        ResolveSikaiIfNeeded();
+        if (sikai == null) {
+            return;
+            }
+
+        Vector3 forward = transform.forward;
+        forward.y = 0f;
+
+        if (forward.sqrMagnitude <= 0.0001f) {
+            forward = Vector3.forward;
+            } else {
+            forward.Normalize();
+            }
+
+        sikai.position = transform.position + forward * sikaiForwardOffset + Vector3.down * sikaiDownOffset;
         }
     }
