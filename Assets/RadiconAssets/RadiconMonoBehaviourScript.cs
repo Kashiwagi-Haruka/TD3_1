@@ -289,7 +289,8 @@ public class RadiconMonoBehaviourScript : MonoBehaviour {
             return;
             }
 
-        if (IsTouchingBlock(out Vector3 blockPoint)) {
+        if (TryGetTouchingBlock(out Collider blockCollider, out Vector3 blockPoint)) {
+            Destroy(blockCollider.gameObject);
             SpawnRedParticles(blockPoint);
             }
         }
@@ -322,7 +323,7 @@ public class RadiconMonoBehaviourScript : MonoBehaviour {
         heldCandle = nearestCandle;
         }
 
-    private bool IsTouchingBlock (out Vector3 hitPoint) {
+    private bool TryGetTouchingBlock (out Collider blockCollider, out Vector3 hitPoint) {
         Vector3 center = transform.position + Vector3.up * interactionHeightOffset;
         Collider[] nearbyColliders = Physics.OverlapSphere(center, blockCheckRange, ~0, QueryTriggerInteraction.Ignore);
 
@@ -331,10 +332,12 @@ public class RadiconMonoBehaviourScript : MonoBehaviour {
                 continue;
                 }
 
+            blockCollider = nearbyCollider;
             hitPoint = nearbyCollider.ClosestPoint(center);
             return true;
             }
 
+        blockCollider = null;
         hitPoint = center + transform.forward * 0.2f;
         return false;
         }
