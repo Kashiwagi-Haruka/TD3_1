@@ -30,9 +30,10 @@ public class RadiconMonoBehaviourScript : MonoBehaviour {
     [SerializeField] private float portalCameraFarClipPlane = 80f;
     [SerializeField] private int portalRenderTextureSize = 512;
     [SerializeField] private Color portalVisibleColor = new Color(0.2f, 0.9f, 1f, 1f);
+    [SerializeField] private int portalNoiseTextureSize = 128;
 
     private Rigidbody rb;
-
+    private MeshRenderer[] portalRenderers = System.Array.Empty<MeshRenderer>();
     private void Awake () {
         rb = GetComponent<Rigidbody>();
         rb.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
@@ -103,6 +104,7 @@ public class RadiconMonoBehaviourScript : MonoBehaviour {
 
         BindPortalTexture(topPortal, portalRenderTexture);
         BindPortalTexture(floatingPortal, portalRenderTexture);
+        CachePortalRenderers(topPortal, floatingPortal);
 
         GameObject portalCameraObject = portalCameraTransform == null
             ? new GameObject("PortalForwardCamera")
@@ -124,6 +126,44 @@ public class RadiconMonoBehaviourScript : MonoBehaviour {
         portalCamera.fieldOfView = 65f;
         }
 
+    private void CachePortalRenderers (GameObject topPortal, GameObject floatingPortal) {
+        MeshRenderer topPortalRenderer = topPortal == null ? null : topPortal.GetComponent<MeshRenderer>();
+        MeshRenderer floatingPortalRenderer = floatingPortal == null ? null : floatingPortal.GetComponent<MeshRenderer>();
+        portalRenderers = new[] { topPortalRenderer, floatingPortalRenderer };
+        }
+
+    public void FillPortalsWithBlackAndWhiteNoise () {
+        Texture2D noiseTexture = BuildBlackAndWhiteNoiseTexture();
+
+        foreach (MeshRenderer portalRenderer in portalRenderers) {
+            if (portalRenderer == null || portalRenderer.material == null) {
+                continue;
+                }
+
+            Material portalMaterial = portalRenderer.material;
+            portalMaterial.mainTexture = noiseTexture;
+            if (portalMaterial.HasProperty("_BaseMap")) {
+                portalMaterial.SetTexture("_BaseMap", noiseTexture);
+                }
+            }
+        }
+
+    private Texture2D BuildBlackAndWhiteNoiseTexture () {
+        int textureSize = Mathf.Max(16, portalNoiseTextureSize);
+        Texture2D noiseTexture = new Texture2D(textureSize, textureSize, TextureFormat.RGB24, false);
+        Color[] pixels = new Color[textureSize * textureSize];
+
+        for (int index = 0; index < pixels.Length; index++) {
+            bool isWhite = Random.value > 0.5f;
+            pixels[index] = isWhite ? Color.white : Color.black;
+            }
+
+        noiseTexture.SetPixels(pixels);
+        noiseTexture.wrapMode = TextureWrapMode.Repeat;
+        noiseTexture.filterMode = FilterMode.Point;
+        noiseTexture.Apply();
+        return noiseTexture;
+        }
     private GameObject CreatePortalSurface (string portalName, Transform parentTarget, Vector3 localPosition) {
         GameObject portalObject = new GameObject(portalName);
         MeshFilter meshFilter = portalObject.AddComponent<MeshFilter>();

@@ -39,6 +39,26 @@ public class EnemyMonoBehaviourScript : MonoBehaviour {
         Quaternion targetRotation = Quaternion.LookRotation(moveDirection, Vector3.up);
         transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, turnSpeed * Time.deltaTime);
         }
+    void OnCollisionEnter (Collision collision) {
+        TryFillPortalNoise(collision.collider);
+        }
+
+    void OnTriggerEnter (Collider other) {
+        TryFillPortalNoise(other);
+        }
+
+    void TryFillPortalNoise (Collider hitCollider) {
+        if (hitCollider == null) {
+            return;
+            }
+
+        RadiconMonoBehaviourScript radicon = hitCollider.GetComponentInParent<RadiconMonoBehaviourScript>();
+        if (radicon == null) {
+            return;
+            }
+
+        radicon.FillPortalsWithBlackAndWhiteNoise();
+        }
 
     void PickNextTarget () {
         Vector2 randomCircle = Random.insideUnitCircle * wanderRadius;
