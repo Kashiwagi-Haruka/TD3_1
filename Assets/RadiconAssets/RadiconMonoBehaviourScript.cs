@@ -11,6 +11,8 @@ public class RadiconMonoBehaviourScript : MonoBehaviour {
     [Header("Stability")]
     [SerializeField] private float dragOnGround = 3.2f;
     [SerializeField] private float angularDragOnGround = 8f;
+    [SerializeField] private float maxYawAngularSpeed = 2.5f;
+    [SerializeField] private float yawSpinDamping = 18f;
     [SerializeField] private bool keepOnGroundPlane = true;
 
     [Header("Ground Check")]
@@ -35,6 +37,7 @@ public class RadiconMonoBehaviourScript : MonoBehaviour {
     private void Awake () {
         rb = GetComponent<Rigidbody>();
         rb.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
+        rb.maxAngularVelocity = maxYawAngularSpeed;
         mainCameraTransform = UnityEngine.Camera.main == null ? null : UnityEngine.Camera.main.transform;
 
         if (keepOnGroundPlane) {
@@ -265,6 +268,12 @@ public class RadiconMonoBehaviourScript : MonoBehaviour {
     private void ApplyStability (bool isGrounded) {
         rb.linearDamping = isGrounded ? dragOnGround : 0.4f;
         rb.angularDamping = isGrounded ? angularDragOnGround : 1f;
+
+        if (isGrounded) {
+            Vector3 angularVelocity = rb.angularVelocity;
+            float stabilizedYaw = Mathf.MoveTowards(angularVelocity.y, 0f, yawSpinDamping * Time.fixedDeltaTime);
+            rb.angularVelocity = new Vector3(0f, stabilizedYaw, 0f);
+            }
 
         }
 
