@@ -103,10 +103,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   acceleration: 18
   maxSpeed: 12
-  reverseSpeedMultiplier: 0.55
   turnSpeed: 120
+  lateralGrip: 12
   dragOnGround: 2.2
   angularDragOnGround: 4
+  maxYawAngularSpeed: 2.5
+  yawSpinDamping: 18
   keepOnGroundPlane: 1
   groundCheck: {fileID: 0}
   groundCheckRadius: 0.35
@@ -117,11 +119,11 @@ MonoBehaviour:
   floatingPortalTarget: {fileID: 0}
   topPortalLocalPosition: {x: 0, y: 0.6, z: 0}
   floatingPortalLocalPosition: {x: 0, y: 1.4, z: 0.25}
-  portalLocalScale: {x: 0.45, y: 0.25, z: 1}
+  portalLocalScale: {x: 0.75, y: 0.75, z: 1}
   portalForwardCameraLocalPosition: {x: 0, y: 0.35, z: 0.85}
   portalCameraFarClipPlane: 80
   portalRenderTextureSize: 512
-  portalVisibleColor: {r: 0.2, g: 0.9, b: 1, a: 1}
+  portalVisibleColor: {r: 1, g: 1, b: 1, a: 1}
 --- !u!54 &2199026589256290148
 Rigidbody:
   m_ObjectHideFlags: 0

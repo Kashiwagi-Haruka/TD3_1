@@ -5,12 +5,14 @@ public class RadiconMonoBehaviourScript : MonoBehaviour {
     [Header("Driving")]
     [SerializeField] private float acceleration = 20f;
     [SerializeField] private float maxSpeed = 8f;
-    [SerializeField] private float turnSpeed = 1f;
-    [SerializeField] private bool useCameraRelativeInput = true;
+    [SerializeField] private float turnSpeed = 120f;
+    [SerializeField] private float lateralGrip = 12f;
 
     [Header("Stability")]
     [SerializeField] private float dragOnGround = 3.2f;
     [SerializeField] private float angularDragOnGround = 8f;
+    [SerializeField] private float maxYawAngularSpeed = 2.5f;
+    [SerializeField] private float yawSpinDamping = 18f;
     [SerializeField] private bool keepOnGroundPlane = true;
 
     [Header("Ground Check")]
@@ -28,14 +30,17 @@ public class RadiconMonoBehaviourScript : MonoBehaviour {
     [SerializeField] private float portalCameraFarClipPlane = 80f;
     [SerializeField] private int portalRenderTextureSize = 512;
     [SerializeField] private Color portalVisibleColor = new Color(0.2f, 0.9f, 1f, 1f);
+    [SerializeField] private int portalNoiseTextureSize = 128;
+    [SerializeField] private float portalNoiseScrollSpeed = 1.2f;
 
     private Rigidbody rb;
-    private Transform mainCameraTransform;
-
+    private MeshRenderer[] portalRenderers = System.Array.Empty<MeshRenderer>();
+    private bool isPortalNoiseActive;
+    private Vector2 portalNoiseOffset;
     private void Awake () {
         rb = GetComponent<Rigidbody>();
         rb.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
-        mainCameraTransform = UnityEngine.Camera.main == null ? null : UnityEngine.Camera.main.transform;
+        rb.maxAngularVelocity = maxYawAngularSpeed;
 
         if (keepOnGroundPlane) {
             rb.constraints |= RigidbodyConstraints.FreezePositionY;
@@ -102,6 +107,7 @@ public class RadiconMonoBehaviourScript : MonoBehaviour {
 
         BindPortalTexture(topPortal, portalRenderTexture);
         BindPortalTexture(floatingPortal, portalRenderTexture);
+        CachePortalRenderers(topPortal, floatingPortal);
 
         GameObject portalCameraObject = portalCameraTransform == null
             ? new GameObject("PortalForwardCamera")
@@ -123,6 +129,70 @@ public class RadiconMonoBehaviourScript : MonoBehaviour {
         portalCamera.fieldOfView = 65f;
         }
 
+    private void CachePortalRenderers (GameObject topPortal, GameObject floatingPortal) {
+        MeshRenderer topPortalRenderer = topPortal == null ? null : topPortal.GetComponent<MeshRenderer>();
+        MeshRenderer floatingPortalRenderer = floatingPortal == null ? null : floatingPortal.GetComponent<MeshRenderer>();
+        portalRenderers = new[] { topPortalRenderer, floatingPortalRenderer };
+        }
+
+
+    public void FillPortalsWithBlackAndWhiteNoise () {
+        Texture2D noiseTexture = BuildBlackAndWhiteNoiseTexture();
+        isPortalNoiseActive = true;
+        portalNoiseOffset = Vector2.zero;
+
+        foreach (MeshRenderer portalRenderer in portalRenderers) {
+            if (portalRenderer == null || portalRenderer.material == null) {
+                continue;
+                }
+
+            Material portalMaterial = portalRenderer.material;
+            portalMaterial.mainTexture = noiseTexture;
+            portalMaterial.mainTextureOffset = Vector2.zero;
+            if (portalMaterial.HasProperty("_BaseMap")) {
+                portalMaterial.SetTexture("_BaseMap", noiseTexture);
+                portalMaterial.SetTextureOffset("_BaseMap", Vector2.zero);
+                }
+            }
+        }
+
+    private void Update () {
+        if (!isPortalNoiseActive || portalRenderers.Length == 0) {
+            return;
+            }
+
+        portalNoiseOffset.x += portalNoiseScrollSpeed * Time.deltaTime;
+        portalNoiseOffset.y += portalNoiseScrollSpeed * 0.35f * Time.deltaTime;
+
+        foreach (MeshRenderer portalRenderer in portalRenderers) {
+            if (portalRenderer == null || portalRenderer.material == null) {
+                continue;
+                }
+
+            Material portalMaterial = portalRenderer.material;
+            portalMaterial.mainTextureOffset = portalNoiseOffset;
+            if (portalMaterial.HasProperty("_BaseMap")) {
+                portalMaterial.SetTextureOffset("_BaseMap", portalNoiseOffset);
+                }
+            }
+        }
+
+    private Texture2D BuildBlackAndWhiteNoiseTexture () {
+        int textureSize = Mathf.Max(16, portalNoiseTextureSize);
+        Texture2D noiseTexture = new Texture2D(textureSize, textureSize, TextureFormat.RGB24, false);
+        Color[] pixels = new Color[textureSize * textureSize];
+
+        for (int index = 0; index < pixels.Length; index++) {
+            bool isWhite = Random.value > 0.5f;
+            pixels[index] = isWhite ? Color.white : Color.black;
+            }
+
+        noiseTexture.SetPixels(pixels);
+        noiseTexture.wrapMode = TextureWrapMode.Repeat;
+        noiseTexture.filterMode = FilterMode.Point;
+        noiseTexture.Apply();
+        return noiseTexture;
+        }
     private GameObject CreatePortalSurface (string portalName, Transform parentTarget, Vector3 localPosition) {
         GameObject portalObject = new GameObject(portalName);
         MeshFilter meshFilter = portalObject.AddComponent<MeshFilter>();
@@ -196,75 +266,67 @@ public class RadiconMonoBehaviourScript : MonoBehaviour {
         portalRenderer.material = portalMaterial;
         }
     private void FixedUpdate () {
-        float throttle = Input.GetAxis("Vertical");
-        float steer = Input.GetAxis("Horizontal");
+        EnforceYawOnlyRotation();
+
+        float throttle = Input.GetAxisRaw("Vertical");
+        float steer = -Input.GetAxisRaw("Horizontal");
         bool isGrounded = IsGrounded();
 
-        ApplyPlanarMovement(steer, throttle, isGrounded);
+        ApplyPlanarMovement(throttle, isGrounded);
+        ApplySteering(steer, isGrounded);
         ApplyStability(isGrounded);
         }
 
-    private void ApplyPlanarMovement (float horizontal, float vertical, bool isGrounded) {
+    private void EnforceYawOnlyRotation () {
+        Vector3 currentEulerAngles = rb.rotation.eulerAngles;
+        rb.MoveRotation(Quaternion.Euler(0f, currentEulerAngles.y, 0f));
+
+        Vector3 angularVelocity = rb.angularVelocity;
+        rb.angularVelocity = new Vector3(0f, angularVelocity.y, 0f);
+        }
+
+    private void ApplyPlanarMovement (float throttle, bool isGrounded) {
         if (!isGrounded) {
             return;
             }
 
-        Vector3 inputDirection = GetInputDirection(horizontal, vertical);
+        Vector3 forward = Vector3.ProjectOnPlane(transform.forward, Vector3.up).normalized;
         Vector3 planarVelocity = new Vector3(rb.linearVelocity.x, 0f, rb.linearVelocity.z);
-        Vector3 targetVelocity = inputDirection * maxSpeed;
-        Vector3 velocityDelta = targetVelocity - planarVelocity;
 
-        if (velocityDelta.sqrMagnitude > 0.0001f) {
-            Vector3 accelerationStep = Vector3.ClampMagnitude(velocityDelta / Time.fixedDeltaTime, acceleration);
-            rb.AddForce(accelerationStep, ForceMode.Acceleration);
+        float currentForwardSpeed = Vector3.Dot(planarVelocity, forward);
+        float targetForwardSpeed = throttle * maxSpeed;
+        float forwardSpeedDelta = targetForwardSpeed - currentForwardSpeed;
+
+        float maxForwardAccelerationStep = acceleration * Time.fixedDeltaTime;
+        float forwardAcceleration = Mathf.Clamp(forwardSpeedDelta, -maxForwardAccelerationStep, maxForwardAccelerationStep) / Time.fixedDeltaTime;
+        rb.AddForce(forward * forwardAcceleration, ForceMode.Acceleration);
+
+        Vector3 lateralVelocity = planarVelocity - forward * currentForwardSpeed;
+        if (lateralVelocity.sqrMagnitude > 0.0001f) {
+            Vector3 lateralCorrection = Vector3.ClampMagnitude(-lateralVelocity / Time.fixedDeltaTime, lateralGrip);
+            rb.AddForce(lateralCorrection, ForceMode.Acceleration);
             }
-
-        RotateTowardsMoveDirection(inputDirection);
         }
 
-    private Vector3 GetInputDirection (float horizontal, float vertical) {
-        Vector3 rawInput = new Vector3(horizontal, 0f, vertical);
-        if (rawInput.sqrMagnitude < 0.0025f) {
-            return Vector3.zero;
-            }
-
-        if (useCameraRelativeInput) {
-            if (mainCameraTransform == null && UnityEngine.Camera.main != null) {
-                mainCameraTransform = UnityEngine.Camera.main.transform;
-                }
-
-            if (mainCameraTransform != null) {
-                Vector3 cameraForward = Vector3.ProjectOnPlane(mainCameraTransform.forward, Vector3.up);
-                if (cameraForward.sqrMagnitude < 0.0001f) {
-                    cameraForward = Vector3.ProjectOnPlane(transform.forward, Vector3.up);
-                    }
-
-                if (cameraForward.sqrMagnitude < 0.0001f) {
-                    cameraForward = Vector3.forward;
-                    }
-
-                cameraForward.Normalize();
-                Vector3 cameraRight = Vector3.Cross(Vector3.up, cameraForward).normalized;
-                return ( cameraRight * horizontal + cameraForward * vertical ).normalized;
-                }
-            }
-
-        return rawInput.normalized;
-        }
-
-    private void RotateTowardsMoveDirection (Vector3 inputDirection) {
-        if (inputDirection.sqrMagnitude < 0.0001f) {
+    private void ApplySteering (float steer, bool isGrounded) {
+        if (!isGrounded || Mathf.Abs(steer) < 0.0001f) {
             return;
             }
 
-        Quaternion targetRotation = Quaternion.LookRotation(inputDirection, Vector3.up);
-        Quaternion smoothedRotation = Quaternion.Slerp(rb.rotation, targetRotation, turnSpeed * Time.fixedDeltaTime);
-        rb.MoveRotation(smoothedRotation);
+        float rotationStep = steer * turnSpeed * Time.fixedDeltaTime;
+        Quaternion nextRotation = rb.rotation * Quaternion.Euler(0f, rotationStep, 0f);
+        rb.MoveRotation(nextRotation);
         }
 
     private void ApplyStability (bool isGrounded) {
         rb.linearDamping = isGrounded ? dragOnGround : 0.4f;
         rb.angularDamping = isGrounded ? angularDragOnGround : 1f;
+
+        if (isGrounded) {
+            Vector3 angularVelocity = rb.angularVelocity;
+            float stabilizedYaw = Mathf.MoveTowards(angularVelocity.y, 0f, yawSpinDamping * Time.fixedDeltaTime);
+            rb.angularVelocity = new Vector3(0f, stabilizedYaw, 0f);
+            }
 
         }
 
