@@ -1,6 +1,7 @@
 using System.Collections;
 using TMPro;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class PlsyerRadiconMonoBehaviourScript : MonoBehaviour {
     [Header("Movement")]
@@ -21,14 +22,17 @@ public class PlsyerRadiconMonoBehaviourScript : MonoBehaviour {
     [SerializeField] private TMP_Text stageClearText;
     [SerializeField] private TMP_Text keyDoorText;
     [SerializeField] private TMP_Text closeDoorText;
+    [SerializeField] private TMP_Text gameOverText;
     [SerializeField] private float keyDoorTextDuration = 2f;
     [SerializeField] private float closeDoorTextDuration = 2f;
+    [SerializeField] private KeyCode restartKey = KeyCode.Space;
 
     float pitch;
     float yaw;
     float verticalVelocity;
     CharacterController characterController;
     bool hasKey;
+    bool isGameOver;
     Coroutine keyDoorTextCoroutine;
     Coroutine closeDoorTextCoroutine;
 
@@ -60,9 +64,47 @@ public class PlsyerRadiconMonoBehaviourScript : MonoBehaviour {
         }
 
     void Update () {
+        if (isGameOver) {
+            if (Input.GetKeyDown(restartKey)) {
+                RestartScene();
+                }
+
+            return;
+            }
+
         HandleLook();
         HandleMove();
         HandleKeyDoorInteraction();
+        }
+
+    void OnCollisionEnter (Collision collision) {
+        TryTriggerGameOver(collision.collider);
+        }
+
+    void OnTriggerEnter (Collider other) {
+        TryTriggerGameOver(other);
+        }
+
+    void TryTriggerGameOver (Collider hitCollider) {
+        if (isGameOver || hitCollider == null) {
+            return;
+            }
+
+        EnemyMonoBehaviourScript enemy = hitCollider.GetComponentInParent<EnemyMonoBehaviourScript>();
+        if (enemy == null) {
+            return;
+            }
+
+        isGameOver = true;
+        StopTextCoroutines();
+        HideTexts();
+        SetGameOverVisible(true);
+        Time.timeScale = 0f;
+        }
+
+    void RestartScene () {
+        Time.timeScale = 1f;
+        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
         }
 
     void HandleLook () {
@@ -163,7 +205,7 @@ public class PlsyerRadiconMonoBehaviourScript : MonoBehaviour {
         }
 
     bool HasActiveBlock () {
-        PushBlock[] blocks = FindObjectsOfType<PushBlock>(true);
+        PushBlock[] blocks = FindObjectsByType<PushBlock>(FindObjectsInactive.Include, FindObjectsSortMode.None);
 
         foreach (PushBlock block in blocks) {
             if (block != null && block.gameObject.activeInHierarchy) {
@@ -215,12 +257,32 @@ public class PlsyerRadiconMonoBehaviourScript : MonoBehaviour {
                 closeDoorText = closeDoorObject.GetComponent<TMP_Text>();
                 }
             }
+
+        if (gameOverText == null) {
+            GameObject gameOverObject = GameObject.Find("GameOverText");
+            if (gameOverObject != null) {
+                gameOverText = gameOverObject.GetComponent<TMP_Text>();
+                }
+            }
         }
 
     void HideTexts () {
         SetStageClearVisible(false);
         SetKeyDoorVisible(false);
         SetCloseDoorVisible(false);
+        SetGameOverVisible(false);
+        }
+
+    void StopTextCoroutines () {
+        if (keyDoorTextCoroutine != null) {
+            StopCoroutine(keyDoorTextCoroutine);
+            keyDoorTextCoroutine = null;
+            }
+
+        if (closeDoorTextCoroutine != null) {
+            StopCoroutine(closeDoorTextCoroutine);
+            closeDoorTextCoroutine = null;
+            }
         }
 
     void ShowKeyDoorTemporarily () {
@@ -270,4 +332,11 @@ public class PlsyerRadiconMonoBehaviourScript : MonoBehaviour {
             closeDoorText.gameObject.SetActive(isVisible);
             }
         }
+
+    void SetGameOverVisible (bool isVisible) {
+        if (gameOverText != null && gameOverText.gameObject.activeSelf != isVisible) {
+            gameOverText.gameObject.SetActive(isVisible);
+            }
+        }
     }
+
