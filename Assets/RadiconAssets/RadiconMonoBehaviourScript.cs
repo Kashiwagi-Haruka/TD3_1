@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 
 [RequireComponent(typeof(Rigidbody))]
@@ -43,12 +44,21 @@ public class RadiconMonoBehaviourScript : MonoBehaviour {
     [SerializeField] private float particleLifetime = 0.6f;
     [SerializeField] private float particleSpeed = 2.5f;
 
+    [Header("Block Movie")]
+    [SerializeField] private EnemyMonoBehaviourScript enemyForMovie;
+    [SerializeField] private float movieDuration = 2.5f;
+    [SerializeField] private float movieCameraHeight = 1.8f;
+    [SerializeField] private float movieCameraDistance = 3.6f;
+    [SerializeField] private float movieOrbitSpeed = 32f;
+
 
     private RousokuMonoBehaviourScript heldCandle;
     private Rigidbody rb;
     private MeshRenderer[] portalRenderers = System.Array.Empty<MeshRenderer>();
     private bool isPortalNoiseActive;
     private Vector2 portalNoiseOffset;
+    private bool isPlayingMovie;
+
     private void Awake () {
         rb = GetComponent<Rigidbody>();
         rb.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
@@ -63,6 +73,10 @@ public class RadiconMonoBehaviourScript : MonoBehaviour {
 
         if (groundCheck == null) {
             groundCheck = transform;
+            }
+
+        if (enemyForMovie == null) {
+            enemyForMovie = FindAnyObjectByType<EnemyMonoBehaviourScript>();
             }
         }
 
@@ -284,6 +298,10 @@ public class RadiconMonoBehaviourScript : MonoBehaviour {
         }
 
     private void HandleInteract () {
+        if (isPlayingMovie) {
+            return;
+            }
+
         if (!Input.GetKeyDown(interactKey)) {
             return;
             }
@@ -294,10 +312,85 @@ public class RadiconMonoBehaviourScript : MonoBehaviour {
             }
 
         if (TryGetTouchingBlock(out Collider blockCollider, out Vector3 blockPoint)) {
+            StartCoroutine(PlayBlockMovie(blockCollider, blockPoint));
+            }
+        }
+
+    private IEnumerator PlayBlockMovie (Collider blockCollider, Vector3 blockPoint) {
+        if (blockCollider == null) {
+            yield break;
+            }
+
+        isPlayingMovie = true;
+        rb.linearVelocity = Vector3.zero;
+        rb.angularVelocity = Vector3.zero;
+
+        UnityEngine.Camera mainCamera = UnityEngine.Camera.main;
+        CameraMonoBehaviourScript cameraController = mainCamera == null ? null : mainCamera.GetComponent<CameraMonoBehaviourScript>();
+
+        Vector3 originalCameraPosition = Vector3.zero;
+        Quaternion originalCameraRotation = Quaternion.identity;
+        bool hadMainCamera = mainCamera != null;
+        bool wasCameraControllerEnabled = cameraController != null && cameraController.enabled;
+
+        if (hadMainCamera) {
+            originalCameraPosition = mainCamera.transform.position;
+            originalCameraRotation = mainCamera.transform.rotation;
+
+            if (cameraController != null) {
+                cameraController.enabled = false;
+                }
+            }
+
+        float elapsed = 0f;
+        float safeDuration = Mathf.Max(0.1f, movieDuration);
+
+        while (elapsed < safeDuration) {
+            if (hadMainCamera) {
+                ApplyMovieCameraPose(mainCamera.transform, elapsed / safeDuration);
+                }
+
+            elapsed += Time.deltaTime;
+            yield return null;
+            }
+
+        if (hadMainCamera) {
+            mainCamera.transform.position = originalCameraPosition;
+            mainCamera.transform.rotation = originalCameraRotation;
+
+            if (cameraController != null) {
+                cameraController.enabled = wasCameraControllerEnabled;
+                }
+            }
+
+        if (blockCollider != null) {
             Destroy(blockCollider.gameObject);
             SpawnRedParticles(blockPoint);
             }
+
+        isPlayingMovie = false;
         }
+
+    private void ApplyMovieCameraPose (Transform cameraTransform, float progress) {
+        if (cameraTransform == null) {
+            return;
+            }
+
+        Vector3 radiconFocus = transform.position + Vector3.up * 0.55f;
+        Transform enemyTransform = enemyForMovie == null ? null : enemyForMovie.transform;
+        Vector3 enemyFocus = enemyTransform == null
+            ? radiconFocus + transform.forward * 1.4f
+            : enemyTransform.position + Vector3.up * 0.9f;
+
+        Vector3 center = Vector3.Lerp(radiconFocus, enemyFocus, 0.5f);
+        float orbitAngle = progress * movieOrbitSpeed;
+        Vector3 orbitDirection = Quaternion.Euler(0f, orbitAngle, 0f) * Vector3.back;
+        Vector3 desiredPosition = center + orbitDirection * movieCameraDistance + Vector3.up * movieCameraHeight;
+
+        cameraTransform.position = desiredPosition;
+        cameraTransform.LookAt(center);
+        }
+
 
     private void TryPickupCandle () {
         Vector3 center = transform.position + Vector3.up * interactionHeightOffset;
@@ -371,6 +464,12 @@ public class RadiconMonoBehaviourScript : MonoBehaviour {
         }
 
     private void FixedUpdate () {
+        if (isPlayingMovie) {
+            rb.linearVelocity = Vector3.zero;
+            rb.angularVelocity = Vector3.zero;
+            return;
+            }
+
         EnforceYawOnlyRotation();
 
         float throttle = Input.GetAxisRaw("Vertical");
