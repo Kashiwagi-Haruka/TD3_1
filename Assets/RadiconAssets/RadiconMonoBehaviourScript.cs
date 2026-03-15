@@ -25,6 +25,8 @@ public class RadiconMonoBehaviourScript : MonoBehaviour {
     [SerializeField] private Transform floatingPortalTarget;
     [SerializeField] private Vector3 topPortalLocalPosition = new Vector3(0f, 0.6f, 0f);
     [SerializeField] private Vector3 floatingPortalLocalPosition = new Vector3(0f, 1.4f, 0.25f);
+    [SerializeField] private Vector3 topPortalLocalEulerAngles = Vector3.zero;
+    [SerializeField] private Vector3 floatingPortalLocalEulerAngles = new Vector3(-90f, 0f, 0f);
     [SerializeField] private Vector3 portalLocalScale = new Vector3(0.45f, 0.25f, 1f);
     [SerializeField] private Vector3 portalForwardCameraLocalPosition = new Vector3(0f, 0.35f, 0.85f);
     [SerializeField] private float portalCameraFarClipPlane = 80f;
@@ -40,6 +42,7 @@ public class RadiconMonoBehaviourScript : MonoBehaviour {
     [SerializeField] private int particleBurstCount = 25;
     [SerializeField] private float particleLifetime = 0.6f;
     [SerializeField] private float particleSpeed = 2.5f;
+
 
     private RousokuMonoBehaviourScript heldCandle;
     private Rigidbody rb;
@@ -98,18 +101,18 @@ public class RadiconMonoBehaviourScript : MonoBehaviour {
         Transform portalCameraTransform = transform.Find("PortalForwardCamera");
 
         GameObject topPortal = topPortalTransform == null
-            ? CreatePortalSurface("TopPortal", topPortalTarget, topPortalLocalPosition)
+            ? CreatePortalSurface("TopPortal", topPortalTarget, topPortalLocalPosition, topPortalLocalEulerAngles)
             : topPortalTransform.gameObject;
 
         GameObject floatingPortal = floatingPortalTransform == null
-            ? CreatePortalSurface("FloatingPortal", floatingPortalTarget, floatingPortalLocalPosition)
+            ? CreatePortalSurface("FloatingPortal", floatingPortalTarget, floatingPortalLocalPosition, floatingPortalLocalEulerAngles)
             : floatingPortalTransform.gameObject;
 
         RemovePortalCollider(topPortal);
         RemovePortalCollider(floatingPortal);
 
-        ReattachPortal(topPortal.transform, topPortalTarget, topPortalLocalPosition);
-        ReattachPortal(floatingPortal.transform, floatingPortalTarget, floatingPortalLocalPosition);
+        ReattachPortal(topPortal.transform, topPortalTarget, topPortalLocalPosition, topPortalLocalEulerAngles);
+        ReattachPortal(floatingPortal.transform, floatingPortalTarget, floatingPortalLocalPosition, floatingPortalLocalEulerAngles);
 
         RenderTexture portalRenderTexture = new RenderTexture(portalRenderTextureSize, portalRenderTextureSize, 16);
         portalRenderTexture.name = $"{name}_PortalRenderTexture";
@@ -202,7 +205,7 @@ public class RadiconMonoBehaviourScript : MonoBehaviour {
         noiseTexture.Apply();
         return noiseTexture;
         }
-    private GameObject CreatePortalSurface (string portalName, Transform parentTarget, Vector3 localPosition) {
+    private GameObject CreatePortalSurface (string portalName, Transform parentTarget, Vector3 localPosition, Vector3 localEulerAngles) {
         GameObject portalObject = new GameObject(portalName);
         MeshFilter meshFilter = portalObject.AddComponent<MeshFilter>();
         portalObject.AddComponent<MeshRenderer>();
@@ -216,7 +219,7 @@ public class RadiconMonoBehaviourScript : MonoBehaviour {
 
         meshFilter.sharedMesh = quadMesh;
 
-        ReattachPortal(portalObject.transform, parentTarget, localPosition);
+        ReattachPortal(portalObject.transform, parentTarget, localPosition, localEulerAngles);
         return portalObject;
         }
 
@@ -231,7 +234,7 @@ public class RadiconMonoBehaviourScript : MonoBehaviour {
             }
         }
 
-    private void ReattachPortal (Transform portalTransform, Transform parentTarget, Vector3 localPosition) {
+    private void ReattachPortal (Transform portalTransform, Transform parentTarget, Vector3 localPosition, Vector3 localEulerAngles) {
         if (portalTransform == null) {
             return;
             }
@@ -242,9 +245,10 @@ public class RadiconMonoBehaviourScript : MonoBehaviour {
 
         portalTransform.SetParent(parentTarget, false);
         portalTransform.localPosition = localPosition;
-        portalTransform.localRotation = Quaternion.Euler(-90f, 0f, 0f);
+        portalTransform.localRotation = Quaternion.Euler(localEulerAngles);
         portalTransform.localScale = portalLocalScale;
         }
+
 
     private void BindPortalTexture (GameObject portalObject, RenderTexture renderTexture) {
         MeshRenderer portalRenderer = portalObject.GetComponent<MeshRenderer>();
