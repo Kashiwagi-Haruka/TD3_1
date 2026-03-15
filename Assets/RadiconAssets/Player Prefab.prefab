@@ -28,7 +28,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2449530727698053730}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.27619115, y: -0.043594643, z: -0.012541726, w: 0.9600316}
+  m_LocalRotation: {x: -0.08953715, y: 0.8196989, z: 0.13349673, w: 0.5497776}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -102,6 +102,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   moveSpeed: 6
   gravity: -9.81
+  inputDeadzone: 0.1
+  wallStickCancelThreshold: 0.6
   viewPivot: {fileID: 0}
   mouseSensitivity: 2
   limitPitch: 0

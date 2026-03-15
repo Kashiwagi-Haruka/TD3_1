@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: -8141196902364024543}
   - component: {fileID: 2199026589256290148}
   - component: {fileID: 7728241186413565470}
+  - component: {fileID: -4885210864204656583}
   m_Layer: 0
   m_Name: Radicon Prefab
   m_TagString: Untagged
@@ -136,3 +137,47 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1, y: 2.0000005, z: 1.0000002}
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &-4885210864204656583
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8130895800193472615}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 288e5b63a5823f7459a0c42fcf59ea6e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  acceleration: 20
+  maxSpeed: 8
+  turnSpeed: 120
+  lateralGrip: 12
+  dragOnGround: 3.2
+  angularDragOnGround: 8
+  maxYawAngularSpeed: 2.5
+  yawSpinDamping: 18
+  keepOnGroundPlane: 0
+  groundCheck: {fileID: 0}
+  groundCheckRadius: 0.35
+  groundLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  topPortalTarget: {fileID: 7655714541163842895, guid: 54654b7a56c75c3438d6a88825c5d6a4, type: 3}
+  floatingPortalTarget: {fileID: 1777210164957380929}
+  topPortalLocalPosition: {x: 0, y: 0.6, z: 0}
+  floatingPortalLocalPosition: {x: 0, y: 1.4, z: 0.25}
+  portalLocalScale: {x: 0.45, y: 0.25, z: 1}
+  portalForwardCameraLocalPosition: {x: 0, y: 0.35, z: 0.85}
+  portalCameraFarClipPlane: 80
+  portalRenderTextureSize: 512
+  portalVisibleColor: {r: 1, g: 1, b: 1, a: 1}
+  portalNoiseTextureSize: 128
+  portalNoiseScrollSpeed: 1.2
+  interactKey: 101
+  candlePickupRange: 1.5
+  blockCheckRange: 1.3
+  interactionHeightOffset: 0.35
+  particleBurstCount: 25
+  particleLifetime: 0.6
+  particleSpeed: 2.5

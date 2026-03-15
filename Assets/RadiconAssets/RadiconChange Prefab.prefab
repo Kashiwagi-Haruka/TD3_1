@@ -150,10 +150,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 85e1d4ef332278147853902c5a0620d5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  playerController: {fileID: 0}
-  radiconController: {fileID: 0}
-  playerTransform: {fileID: 0}
-  radiconTransform: {fileID: 0}
+  playerController: {fileID: 7883831151231201142, guid: 77b6c669e02f0b54f84afd25d7c52de3, type: 3}
+  radiconController: {fileID: -4885210864204656583, guid: deab0c3571ebf7f469e3abdd1e7c2a8d, type: 3}
+  playerTransform: {fileID: 5255246590540325233, guid: 77b6c669e02f0b54f84afd25d7c52de3, type: 3}
+  radiconTransform: {fileID: 1777210164957380929, guid: deab0c3571ebf7f469e3abdd1e7c2a8d, type: 3}
   activateKey: 101
   returnKey: 114
   touchDistance: 1.35

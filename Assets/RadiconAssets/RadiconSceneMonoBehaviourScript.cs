@@ -2,19 +2,41 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 
 public class RadiconSceneMonoBehaviourScript : MonoBehaviour {
-    [Header("Generated Radicon")]
-    [SerializeField] private string generatedObjectName = "Radicon Generated";
-    [SerializeField] private Vector3 spawnPosition = new Vector3(1.72f, 0.23f, -2.2f);
-    [SerializeField] private Vector3 spawnEulerAngles = new Vector3(90f, 0f, 0f);
-    [SerializeField] private Vector3 spawnScale = new Vector3(1f, 0.5f, 1f);
-    [SerializeField] private Material radiconMaterial;
-
-    [Header("Collider")]
-    [SerializeField] private float colliderRadius = 0.5f;
-    [SerializeField] private float colliderHeight = 2f;
-
-    [Header("Behavior")]
+    [Header("Scene")]
+    [SerializeField] private string targetSceneName = "RadiconScene";
     [SerializeField] private bool createOnStart = true;
+
+    [Header("Direct Object Assignments (Scene object or Prefab)")]
+    [SerializeField] private GameObject floorObject;
+    [SerializeField] private GameObject playerObject;
+    [SerializeField] private GameObject radiconObject;
+    [SerializeField] private GameObject[] wallObjects;
+
+    [Header("Additional Attach Objects")]
+    [SerializeField] private GameObject enemyObject;
+    [SerializeField] private GameObject keyObject;
+    [SerializeField] private GameObject doorObject;
+    [SerializeField] private GameObject closeDoorObject;
+    [SerializeField] private GameObject blockObject;
+    [SerializeField] private GameObject candleObject;
+    [SerializeField] private GameObject[] extraSceneObjects;
+
+    [Header("Spawn Points")]
+    [SerializeField] private Transform floorSpawnPoint;
+    [SerializeField] private Transform playerSpawnPoint;
+    [SerializeField] private Transform radiconSpawnPoint;
+
+    [Header("Wall Spawn Points (optional)")]
+    [SerializeField] private Transform frontWallSpawnPoint;
+    [SerializeField] private Transform backWallSpawnPoint;
+    [SerializeField] private Transform leftWallSpawnPoint;
+    [SerializeField] private Transform rightWallSpawnPoint;
+
+    [Header("Fallback Names")]
+    [SerializeField] private string generatedFloorName = "Floor Generated";
+    [SerializeField] private string generatedPlayerName = "Player Generated";
+    [SerializeField] private string generatedRadiconName = "Radicon Generated";
+    [SerializeField] private string generatedWallNamePrefix = "Wall Generated";
 
     private static bool bootstrapRegistered;
 
@@ -40,7 +62,7 @@ public class RadiconSceneMonoBehaviourScript : MonoBehaviour {
         GameObject bootstrapperObject = new GameObject("RadiconSceneBootstrapper");
         DontDestroyOnLoad(bootstrapperObject);
         RadiconSceneMonoBehaviourScript bootstrapper = bootstrapperObject.AddComponent<RadiconSceneMonoBehaviourScript>();
-        bootstrapper.TryCreateRadicon();
+        bootstrapper.TryCreateRadiconSceneObjects(scene);
         }
 
     private void Start () {
@@ -48,7 +70,160 @@ public class RadiconSceneMonoBehaviourScript : MonoBehaviour {
             return;
             }
 
+        TryCreateRadiconSceneObjects(SceneManager.GetActiveScene());
+        }
+
+    private void TryCreateRadiconSceneObjects (Scene scene) {
+        if (!ShouldCreateInScene(scene)) {
+            return;
+            }
+
+        TryCreateFloor();
+        TryCreateWalls();
+        TryCreatePlayer();
         TryCreateRadicon();
+        TryEnsureAttachObjects();
+        }
+
+    private bool ShouldCreateInScene (Scene scene) {
+        if (!scene.IsValid() || !scene.isLoaded) {
+            return false;
+            }
+
+        return string.IsNullOrWhiteSpace(targetSceneName) || scene.name == targetSceneName;
+        }
+
+    private void TryEnsureAttachObjects () {
+        enemyObject = EnsureAttachedObject(enemyObject, "EnemyPrefab");
+        keyObject = EnsureAttachedObject(keyObject, "KagiPrefab");
+        doorObject = EnsureAttachedObject(doorObject, "DoorPrefab");
+        closeDoorObject = EnsureAttachedObject(closeDoorObject, "CloseDoorPrefab");
+        blockObject = EnsureAttachedObject(blockObject, "BlockPrefab");
+        candleObject = EnsureAttachedObject(candleObject, "rousokuPrefab");
+
+        if (extraSceneObjects == null) {
+            return;
+            }
+
+        for (int i = 0; i < extraSceneObjects.Length; i++) {
+            extraSceneObjects[i] = EnsureAttachedObject(extraSceneObjects[i], string.Empty);
+            }
+        }
+
+    private GameObject EnsureAttachedObject (GameObject target, string sceneNameFallback) {
+        if (target != null && target.scene.IsValid()) {
+            target.SetActive(true);
+            return target;
+            }
+
+        if (target != null) {
+            GameObject instance = Instantiate(target);
+            instance.name = target.name;
+            return instance;
+            }
+
+        if (string.IsNullOrWhiteSpace(sceneNameFallback)) {
+            return null;
+            }
+
+        GameObject existing = GameObject.Find(sceneNameFallback);
+        if (existing != null) {
+            existing.SetActive(true);
+            return existing;
+            }
+
+        return null;
+        }
+
+    private void TryCreateFloor () {
+        if (( floorObject != null && floorObject.scene.IsValid() ) || GameObject.Find("floor") != null || GameObject.Find(generatedFloorName) != null) {
+            return;
+            }
+
+        floorObject = ResolveOrInstantiate(floorObject, generatedFloorName, floorSpawnPoint, new Vector3(12f, 1f, 12f), PrimitiveType.Cube);
+        Rigidbody floorBody = floorObject.GetComponent<Rigidbody>();
+        if (floorBody == null) {
+            floorBody = floorObject.AddComponent<Rigidbody>();
+            }
+
+        floorBody.useGravity = false;
+        floorBody.isKinematic = true;
+        }
+
+    private void TryCreateWalls () {
+        if (FindAnyObjectByType<WallMarker>() != null || GameObject.Find("WallPrefab") != null) {
+            return;
+            }
+
+        EnsureWallArray();
+
+        Transform[] spawnPoints = {
+            frontWallSpawnPoint,
+            backWallSpawnPoint,
+            leftWallSpawnPoint,
+            rightWallSpawnPoint,
+        };
+
+        Vector3[] fallbackPositions = {
+            new Vector3(0f, 1f, 6f),
+            new Vector3(0f, 1f, -6f),
+            new Vector3(-6f, 1f, 0f),
+            new Vector3(6f, 1f, 0f),
+        };
+
+        Vector3[] fallbackScales = {
+            new Vector3(12f, 2f, 1f),
+            new Vector3(12f, 2f, 1f),
+            new Vector3(1f, 2f, 12f),
+            new Vector3(1f, 2f, 12f),
+        };
+
+        for (int i = 0; i < wallObjects.Length; i++) {
+            string wallName = $"{generatedWallNamePrefix} {i + 1}";
+            wallObjects[i] = ResolveOrInstantiate(wallObjects[i], wallName, spawnPoints[i], fallbackScales[i], PrimitiveType.Cube);
+
+            if (spawnPoints[i] == null) {
+                wallObjects[i].transform.position = fallbackPositions[i];
+                }
+
+            if (wallObjects[i].GetComponent<WallMarker>() == null) {
+                wallObjects[i].AddComponent<WallMarker>();
+                }
+
+            Rigidbody wallBody = wallObjects[i].GetComponent<Rigidbody>();
+            if (wallBody != null) {
+                wallBody.isKinematic = true;
+                wallBody.useGravity = false;
+                }
+            }
+        }
+
+    private void EnsureWallArray () {
+        if (wallObjects == null || wallObjects.Length != 4) {
+            wallObjects = new GameObject[4];
+            }
+        }
+
+    private void TryCreatePlayer () {
+        if (FindAnyObjectByType<PlsyerRadiconMonoBehaviourScript>() != null) {
+            return;
+            }
+
+        playerObject = ResolveOrInstantiate(playerObject, generatedPlayerName, playerSpawnPoint, Vector3.one, PrimitiveType.Capsule);
+
+        CharacterController characterController = playerObject.GetComponent<CharacterController>();
+        if (characterController == null) {
+            characterController = playerObject.AddComponent<CharacterController>();
+            characterController.radius = 0.35f;
+            characterController.height = 1.8f;
+            }
+
+        PlsyerRadiconMonoBehaviourScript playerController = playerObject.GetComponent<PlsyerRadiconMonoBehaviourScript>();
+        if (playerController == null) {
+            playerController = playerObject.AddComponent<PlsyerRadiconMonoBehaviourScript>();
+            }
+
+        EnsurePlayerCamera(playerObject.transform, playerController);
         }
 
     private void TryCreateRadicon () {
@@ -56,30 +231,81 @@ public class RadiconSceneMonoBehaviourScript : MonoBehaviour {
             return;
             }
 
-        GameObject radicon = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        radicon.name = generatedObjectName;
-        radicon.transform.SetPositionAndRotation(spawnPosition, Quaternion.Euler(spawnEulerAngles));
-        radicon.transform.localScale = spawnScale;
+        radiconObject = ResolveOrInstantiate(radiconObject, generatedRadiconName, radiconSpawnPoint, new Vector3(1f, 0.5f, 1f), PrimitiveType.Cube);
 
-        MeshRenderer meshRenderer = radicon.GetComponent<MeshRenderer>();
-        if (meshRenderer != null && radiconMaterial != null) {
-            meshRenderer.sharedMaterial = radiconMaterial;
+        Rigidbody rigidbody = radiconObject.GetComponent<Rigidbody>();
+        if (rigidbody == null) {
+            rigidbody = radiconObject.AddComponent<Rigidbody>();
             }
 
-        Rigidbody rigidbody = radicon.AddComponent<Rigidbody>();
         rigidbody.useGravity = true;
 
-        BoxCollider existingBoxCollider = radicon.GetComponent<BoxCollider>();
-        if (existingBoxCollider != null) {
-            Destroy(existingBoxCollider);
+        CapsuleCollider capsuleCollider = radiconObject.GetComponent<CapsuleCollider>();
+        if (capsuleCollider == null) {
+            BoxCollider boxCollider = radiconObject.GetComponent<BoxCollider>();
+            if (boxCollider != null) {
+                Destroy(boxCollider);
+                }
+
+            capsuleCollider = radiconObject.AddComponent<CapsuleCollider>();
             }
 
-        CapsuleCollider capsuleCollider = radicon.AddComponent<CapsuleCollider>();
-        capsuleCollider.radius = colliderRadius;
-        capsuleCollider.height = colliderHeight;
+        if (radiconObject.GetComponent<RadiconMonoBehaviourScript>() == null) {
+            radiconObject.AddComponent<RadiconMonoBehaviourScript>();
+            }
 
-        radicon.AddComponent<RadiconMonoBehaviourScript>();
-        CreateGroundCheck(radicon.transform);
+        if (radiconObject.transform.Find("GroundCheck") == null) {
+            CreateGroundCheck(radiconObject.transform);
+            }
+        }
+
+    private GameObject ResolveOrInstantiate (GameObject source, string fallbackName, Transform spawnPoint, Vector3 fallbackScale, PrimitiveType primitiveType) {
+        if (source == null) {
+            GameObject generated = GameObject.CreatePrimitive(primitiveType);
+            generated.name = fallbackName;
+            ApplySpawn(generated.transform, spawnPoint, fallbackScale);
+            return generated;
+            }
+
+        if (source.scene.IsValid()) {
+            source.SetActive(true);
+            ApplySpawn(source.transform, spawnPoint, source.transform.localScale == Vector3.zero ? fallbackScale : source.transform.localScale);
+            return source;
+            }
+
+        GameObject instance = Instantiate(source);
+        instance.name = source.name;
+        ApplySpawn(instance.transform, spawnPoint, instance.transform.localScale == Vector3.zero ? fallbackScale : instance.transform.localScale);
+        return instance;
+        }
+
+    private void ApplySpawn (Transform target, Transform spawnPoint, Vector3 fallbackScale) {
+        if (spawnPoint != null) {
+            target.SetPositionAndRotation(spawnPoint.position, spawnPoint.rotation);
+            }
+
+        if (target.localScale == Vector3.zero) {
+            target.localScale = fallbackScale;
+            }
+        }
+
+    private void EnsurePlayerCamera (Transform playerTransform, PlsyerRadiconMonoBehaviourScript playerController) {
+        Transform playerCameraTransform = playerTransform.Find("PlayerCamera");
+        GameObject cameraObject = playerCameraTransform == null ? new GameObject("PlayerCamera") : playerCameraTransform.gameObject;
+
+        cameraObject.transform.SetParent(playerTransform, false);
+        cameraObject.transform.localPosition = new Vector3(0f, 0.7f, 0f);
+        cameraObject.tag = "MainCamera";
+
+        if (cameraObject.GetComponent<Camera>() == null) {
+            cameraObject.AddComponent<Camera>();
+            }
+
+        if (FindAnyObjectByType<AudioListener>() == null && cameraObject.GetComponent<AudioListener>() == null) {
+            cameraObject.AddComponent<AudioListener>();
+            }
+
+        playerController.viewPivot = cameraObject.transform;
         }
 
     private void CreateGroundCheck (Transform parent) {
@@ -87,4 +313,7 @@ public class RadiconSceneMonoBehaviourScript : MonoBehaviour {
         groundCheck.transform.SetParent(parent, false);
         groundCheck.transform.localPosition = Vector3.zero;
         }
+    }
+
+public class WallMarker : MonoBehaviour {
     }
