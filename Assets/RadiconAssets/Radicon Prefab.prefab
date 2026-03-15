@@ -11,7 +11,6 @@ GameObject:
   - component: {fileID: 1777210164957380929}
   - component: {fileID: 2892275590934532298}
   - component: {fileID: -8141196902364024543}
-  - component: {fileID: -2726162169388332095}
   - component: {fileID: 2199026589256290148}
   - component: {fileID: 7728241186413565470}
   m_Layer: 0
@@ -67,7 +66,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 0d6fd8eccc3738747a630e547ca00f1a, type: 2}
+  - {fileID: 2100000, guid: d7618846ee5ff944a8313b2022566149, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -89,41 +88,6 @@ MeshRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!114 &-2726162169388332095
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8130895800193472615}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 288e5b63a5823f7459a0c42fcf59ea6e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  acceleration: 18
-  maxSpeed: 12
-  turnSpeed: 120
-  lateralGrip: 12
-  dragOnGround: 2.2
-  angularDragOnGround: 4
-  maxYawAngularSpeed: 2.5
-  yawSpinDamping: 18
-  keepOnGroundPlane: 1
-  groundCheck: {fileID: 0}
-  groundCheckRadius: 0.35
-  groundLayers:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  topPortalTarget: {fileID: 0}
-  floatingPortalTarget: {fileID: 0}
-  topPortalLocalPosition: {x: 0, y: 0.6, z: 0}
-  floatingPortalLocalPosition: {x: 0, y: 1.4, z: 0.25}
-  portalLocalScale: {x: 0.75, y: 0.75, z: 1}
-  portalForwardCameraLocalPosition: {x: 0, y: 0.35, z: 0.85}
-  portalCameraFarClipPlane: 80
-  portalRenderTextureSize: 512
-  portalVisibleColor: {r: 1, g: 1, b: 1, a: 1}
 --- !u!54 &2199026589256290148
 Rigidbody:
   m_ObjectHideFlags: 0

@@ -205,14 +205,6 @@ public class PlsyerRadiconMonoBehaviourScript : MonoBehaviour {
         }
 
     bool HasActiveBlock () {
-        PushBlock[] blocks = FindObjectsByType<PushBlock>(FindObjectsInactive.Include, FindObjectsSortMode.None);
-
-        foreach (PushBlock block in blocks) {
-            if (block != null && block.gameObject.activeInHierarchy) {
-                return true;
-                }
-            }
-
         return false;
         }
 

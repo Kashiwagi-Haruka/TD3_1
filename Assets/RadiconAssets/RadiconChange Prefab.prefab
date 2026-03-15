@@ -14,6 +14,7 @@ GameObject:
   - component: {fileID: 2279627792323221838}
   - component: {fileID: -4331352578213031857}
   - component: {fileID: 3104578008390259591}
+  - component: {fileID: 6671317583481409254}
   m_Layer: 0
   m_Name: RadiconChange Prefab
   m_TagString: Untagged
@@ -67,7 +68,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 6f74e1823c110874ca9c7a7d2697820e, type: 2}
+  - {fileID: 2100000, guid: bc3d25ba676112f4da957103cf1d83ee, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -149,3 +150,39 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 85e1d4ef332278147853902c5a0620d5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  playerController: {fileID: 0}
+  radiconController: {fileID: 0}
+  playerTransform: {fileID: 0}
+  radiconTransform: {fileID: 0}
+  activateKey: 101
+  returnKey: 114
+  touchDistance: 1.35
+  handSprite: {fileID: 0}
+  playerCameraOffset: {x: 0, y: 1.8, z: -3}
+  playerCameraFollowSpeed: 9
+  fixedCameraOffset: {x: 0, y: 1, z: 0}
+  fixedCameraEulerAngles: {x: 90, y: 0, z: 0}
+--- !u!114 &6671317583481409254
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7946814857708072451}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 85e1d4ef332278147853902c5a0620d5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  playerController: {fileID: 0}
+  radiconController: {fileID: 0}
+  playerTransform: {fileID: 0}
+  radiconTransform: {fileID: 0}
+  activateKey: 101
+  returnKey: 114
+  touchDistance: 1.35
+  handSprite: {fileID: 0}
+  playerCameraOffset: {x: 0, y: 1.8, z: -3}
+  playerCameraFollowSpeed: 9
+  fixedCameraOffset: {x: 0, y: 10, z: 0}
+  fixedCameraEulerAngles: {x: 90, y: 0, z: 0}
