@@ -1068,6 +1068,26 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 3104578008390259591, guid: 54654b7a56c75c3438d6a88825c5d6a4, type: 3}
+      propertyPath: fixedCameraOffset.y
+      value: 0.6
+      objectReference: {fileID: 0}
+    - target: {fileID: 3104578008390259591, guid: 54654b7a56c75c3438d6a88825c5d6a4, type: 3}
+      propertyPath: fixedCameraOffset.z
+      value: -0.75
+      objectReference: {fileID: 0}
+    - target: {fileID: 3104578008390259591, guid: 54654b7a56c75c3438d6a88825c5d6a4, type: 3}
+      propertyPath: fixedCameraEulerAngles.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3104578008390259591, guid: 54654b7a56c75c3438d6a88825c5d6a4, type: 3}
+      propertyPath: fixedCameraEulerAngles.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3104578008390259591, guid: 54654b7a56c75c3438d6a88825c5d6a4, type: 3}
+      propertyPath: fixedCameraEulerAngles.z
+      value: 180
+      objectReference: {fileID: 0}
     - target: {fileID: 7655714541163842895, guid: 54654b7a56c75c3438d6a88825c5d6a4, type: 3}
       propertyPath: m_LocalPosition.x
       value: 1.9
@@ -1436,8 +1456,8 @@ MonoBehaviour:
   followSpeed: 9
   lookAtOffset: {x: 0, y: 1, z: 0}
   fixedAnchor: {fileID: 7655714541163842895, guid: 54654b7a56c75c3438d6a88825c5d6a4, type: 3}
-  fixedOffset: {x: 0, y: 0.2, z: 0}
-  fixedEulerAngles: {x: 90, y: 0, z: 0}
+  fixedOffset: {x: 0, y: 0.2, z: -1}
+  fixedEulerAngles: {x: 0, y: 90, z: 0}
   fixedZRotationOffset: 180
   startInFollowMode: 1
 --- !u!1 &1002118611
