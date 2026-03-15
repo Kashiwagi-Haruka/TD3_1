@@ -7,6 +7,8 @@ public class PlsyerRadiconMonoBehaviourScript : MonoBehaviour {
     [Header("Movement")]
     public float moveSpeed = 6f;
     public float gravity = -9.81f;
+    [SerializeField] private float inputDeadzone = 0.1f;
+    [SerializeField] private float wallStickCancelThreshold = 0.6f;
 
     [Header("Look")]
     public Transform viewPivot;
@@ -35,6 +37,8 @@ public class PlsyerRadiconMonoBehaviourScript : MonoBehaviour {
     bool isGameOver;
     Coroutine keyDoorTextCoroutine;
     Coroutine closeDoorTextCoroutine;
+    Vector3 lastWallNormal;
+    int lastWallHitFrame = -1;
 
     void Start () {
         characterController = GetComponent<CharacterController>();
@@ -77,6 +81,18 @@ public class PlsyerRadiconMonoBehaviourScript : MonoBehaviour {
         HandleKeyDoorInteraction();
         }
 
+    void OnControllerColliderHit (ControllerColliderHit hit) {
+        if (hit == null) {
+            return;
+            }
+
+        if (Mathf.Abs(hit.normal.y) > 0.25f) {
+            return;
+            }
+
+        lastWallNormal = hit.normal.normalized;
+        lastWallHitFrame = Time.frameCount;
+        }
     void OnCollisionEnter (Collision collision) {
         TryTriggerGameOver(collision.collider);
         }
@@ -134,10 +150,22 @@ public class PlsyerRadiconMonoBehaviourScript : MonoBehaviour {
         }
 
     void HandleMove () {
-        float h = Input.GetAxisRaw("Horizontal");
-        float v = Input.GetAxisRaw("Vertical");
+        float h = ApplyInputDeadzone(Input.GetAxisRaw("Horizontal"));
+        float v = ApplyInputDeadzone(Input.GetAxisRaw("Vertical"));
 
-        Vector3 move = ( transform.right * h + transform.forward * v ).normalized * moveSpeed;
+        Vector3 moveDirection = ( transform.right * h + transform.forward * v ).normalized;
+        Vector3 move = moveDirection * moveSpeed;
+
+        if (lastWallHitFrame == Time.frameCount && lastWallNormal != Vector3.zero && moveDirection != Vector3.zero) {
+            float moveIntoWall = Vector3.Dot(moveDirection, -lastWallNormal);
+            bool noStrafeInput = Mathf.Abs(h) < 0.001f;
+
+            if (moveIntoWall >= wallStickCancelThreshold && noStrafeInput) {
+                move = Vector3.zero;
+                } else if (moveIntoWall > 0f) {
+                move = Vector3.ProjectOnPlane(move, lastWallNormal);
+                }
+            }
 
         if (characterController != null) {
             if (characterController.isGrounded && verticalVelocity < 0f) {
@@ -150,6 +178,10 @@ public class PlsyerRadiconMonoBehaviourScript : MonoBehaviour {
             } else {
             transform.position += move * Time.deltaTime;
             }
+        }
+
+    float ApplyInputDeadzone (float axisValue) {
+        return Mathf.Abs(axisValue) < inputDeadzone ? 0f : axisValue;
         }
 
     void HandleKeyDoorInteraction () {
