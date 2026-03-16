@@ -323,7 +323,7 @@ public class RadiconMonoBehaviourScript : MonoBehaviour {
             return;
             }
 
-        if (TryGetTouchingBlock(out Collider blockCollider, out Vector3 blockPoint)) {
+        if (BlockBehaviourScript.TryGetTouchingBlock(transform, interactionHeightOffset, blockCheckRange, out Collider blockCollider, out Vector3 blockPoint)) {
             StartCoroutine(PlayBlockMovie(blockCollider, blockPoint));
             }
         }
@@ -429,10 +429,7 @@ public class RadiconMonoBehaviourScript : MonoBehaviour {
         if (enemyForMovie != null) {
             enemyForMovie.SetMovementPaused(false);
             }
-        if (blockCollider != null) {
-            Destroy(blockCollider.gameObject);
-            SpawnRedParticles(blockPoint);
-            }
+        BlockBehaviourScript.ConsumeBlock(blockCollider, blockPoint, particleLifetime, particleSpeed, particleBurstCount);
 
         isPlayingMovie = false;
         }
@@ -633,48 +630,7 @@ public class RadiconMonoBehaviourScript : MonoBehaviour {
         heldCandle = nearestCandle;
         }
 
-    private bool TryGetTouchingBlock (out Collider blockCollider, out Vector3 hitPoint) {
-        Vector3 center = transform.position + Vector3.up * interactionHeightOffset;
-        Collider[] nearbyColliders = Physics.OverlapSphere(center, blockCheckRange, ~0, QueryTriggerInteraction.Ignore);
-
-        foreach (Collider nearbyCollider in nearbyColliders) {
-            if (!nearbyCollider.gameObject.name.Contains("Block")) {
-                continue;
-                }
-
-            blockCollider = nearbyCollider;
-            hitPoint = nearbyCollider.ClosestPoint(center);
-            return true;
-            }
-
-        blockCollider = null;
-        hitPoint = center + transform.forward * 0.2f;
-        return false;
-        }
-
-    private void SpawnRedParticles (Vector3 position) {
-        GameObject particleObject = new GameObject("RedInteractionParticles");
-        particleObject.transform.position = position;
-
-        ParticleSystem particleSystem = particleObject.AddComponent<ParticleSystem>();
-        ParticleSystem.MainModule main = particleSystem.main;
-        main.startColor = Color.red;
-        main.startLifetime = particleLifetime;
-        main.startSpeed = particleSpeed;
-        main.startSize = 0.12f;
-        main.simulationSpace = ParticleSystemSimulationSpace.World;
-        main.maxParticles = particleBurstCount;
-
-        ParticleSystem.EmissionModule emission = particleSystem.emission;
-        emission.rateOverTime = 0f;
-
-        ParticleSystem.ShapeModule shape = particleSystem.shape;
-        shape.shapeType = ParticleSystemShapeType.Sphere;
-        shape.radius = 0.08f;
-
-        particleSystem.Emit(particleBurstCount);
-        Destroy(particleObject, particleLifetime + 0.4f);
-        }
+ 
 
     private void FixedUpdate () {
         if (isPlayingMovie) {
