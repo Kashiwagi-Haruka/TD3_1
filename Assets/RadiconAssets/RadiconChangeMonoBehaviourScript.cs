@@ -18,8 +18,8 @@ public class RadiconChangeMonoBehaviourScript : MonoBehaviour {
     [Header("Camera")]
     [SerializeField] private Vector3 playerCameraOffset = new Vector3(0f, 1.8f, -3f);
     [SerializeField] private float playerCameraFollowSpeed = 9f;
-    [SerializeField] private Vector3 fixedCameraOffset = new Vector3(0f, 10.0f, 0f);
-    [SerializeField] private Vector3 fixedCameraEulerAngles = new Vector3(90f, 0f, 0f);
+    [SerializeField] private Vector3 fixedCameraOffset = new Vector3(0f, 1.8f, -3f);
+    [SerializeField] private Vector3 fixedCameraEulerAngles = new Vector3(0f, 90f, 0f);
     private Renderer[] playerRenderers = System.Array.Empty<Renderer>();
 
     private bool controlRadicon;
@@ -132,7 +132,14 @@ public class RadiconChangeMonoBehaviourScript : MonoBehaviour {
         cameraController.ConfigureFollow(playerCameraOffset, playerCameraFollowSpeed);
         cameraController.ConfigureFixed(fixedCameraOffset, fixedCameraEulerAngles);
         }
+    public void ForceReturnToPlayerControl () {
+        if (!controlRadicon) {
+            return;
+            }
 
+        controlRadicon = false;
+        ApplyControlState();
+        }
     private void ApplyControlState () {
         if (playerController != null) {
             playerController.enabled = !controlRadicon;

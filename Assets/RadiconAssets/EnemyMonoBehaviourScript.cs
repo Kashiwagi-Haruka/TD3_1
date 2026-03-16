@@ -17,6 +17,11 @@ public class EnemyMonoBehaviourScript : MonoBehaviour {
     Vector3 originPosition;
     Vector3 targetPosition;
     float idleTimer;
+    bool isMovementPaused;
+
+    public void SetMovementPaused (bool isPaused) {
+        isMovementPaused = isPaused;
+        }
 
     void Start () {
         originPosition = transform.position;
@@ -27,6 +32,10 @@ public class EnemyMonoBehaviourScript : MonoBehaviour {
 
     void Update () {
         UpdateSikaiPosition();
+
+        if (isMovementPaused) {
+            return;
+            }
 
         if (idleTimer > 0f) {
             idleTimer -= Time.deltaTime;

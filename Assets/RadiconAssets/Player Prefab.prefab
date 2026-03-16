@@ -28,7 +28,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2449530727698053730}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.21024902, y: 0.70646375, z: 0.23432644, w: 0.63387346}
+  m_LocalRotation: {x: -0.08953715, y: 0.8196989, z: 0.13349673, w: 0.5497776}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -102,12 +102,23 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   moveSpeed: 6
   gravity: -9.81
+  inputDeadzone: 0.1
+  wallStickCancelThreshold: 0.6
   viewPivot: {fileID: 0}
   mouseSensitivity: 2
   limitPitch: 0
   minPitch: -70
   maxPitch: 75
   lockCursor: 1
+  interactKey: 101
+  interactRange: 1.2
+  stageClearText: {fileID: 0}
+  keyDoorText: {fileID: 0}
+  closeDoorText: {fileID: 0}
+  gameOverText: {fileID: 0}
+  keyDoorTextDuration: 2
+  closeDoorTextDuration: 2
+  restartKey: 32
 --- !u!136 &-6855922142296944444
 CapsuleCollider:
   m_ObjectHideFlags: 0

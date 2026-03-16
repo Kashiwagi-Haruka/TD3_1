@@ -1,9 +1,14 @@
+using System.Collections;
+using TMPro;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class PlsyerRadiconMonoBehaviourScript : MonoBehaviour {
     [Header("Movement")]
     public float moveSpeed = 6f;
     public float gravity = -9.81f;
+    [SerializeField] private float inputDeadzone = 0.1f;
+    [SerializeField] private float wallStickCancelThreshold = 0.6f;
 
     [Header("Look")]
     public Transform viewPivot;
@@ -13,10 +18,27 @@ public class PlsyerRadiconMonoBehaviourScript : MonoBehaviour {
     public float maxPitch = 75f;
     public bool lockCursor = true;
 
+    [Header("Key & Door")]
+    [SerializeField] private KeyCode interactKey = KeyCode.E;
+    [SerializeField] private float interactRange = 1.2f;
+    [SerializeField] private TMP_Text stageClearText;
+    [SerializeField] private TMP_Text keyDoorText;
+    [SerializeField] private TMP_Text closeDoorText;
+    [SerializeField] private TMP_Text gameOverText;
+    [SerializeField] private float keyDoorTextDuration = 2f;
+    [SerializeField] private float closeDoorTextDuration = 2f;
+    [SerializeField] private KeyCode restartKey = KeyCode.Space;
+
     float pitch;
     float yaw;
     float verticalVelocity;
     CharacterController characterController;
+    bool hasKey;
+    bool isGameOver;
+    Coroutine keyDoorTextCoroutine;
+    Coroutine closeDoorTextCoroutine;
+    Vector3 lastWallNormal;
+    int lastWallHitFrame = -1;
 
     void Start () {
         characterController = GetComponent<CharacterController>();
@@ -40,11 +62,65 @@ public class PlsyerRadiconMonoBehaviourScript : MonoBehaviour {
             Cursor.lockState = CursorLockMode.Locked;
             Cursor.visible = false;
             }
+
+        ResolveUIReferences();
+        HideTexts();
         }
 
     void Update () {
+        if (isGameOver) {
+            if (Input.GetKeyDown(restartKey)) {
+                RestartScene();
+                }
+
+            return;
+            }
+
         HandleLook();
         HandleMove();
+        HandleKeyDoorInteraction();
+        }
+
+    void OnControllerColliderHit (ControllerColliderHit hit) {
+        if (hit == null) {
+            return;
+            }
+
+        if (Mathf.Abs(hit.normal.y) > 0.25f) {
+            return;
+            }
+
+        lastWallNormal = hit.normal.normalized;
+        lastWallHitFrame = Time.frameCount;
+        }
+    void OnCollisionEnter (Collision collision) {
+        TryTriggerGameOver(collision.collider);
+        }
+
+    void OnTriggerEnter (Collider other) {
+        TryTriggerGameOver(other);
+        }
+
+    void TryTriggerGameOver (Collider hitCollider) {
+        if (isGameOver || hitCollider == null) {
+            return;
+            }
+
+        EnemyMonoBehaviourScript enemy = hitCollider.GetComponentInParent<EnemyMonoBehaviourScript>();
+        if (enemy == null) {
+            return;
+            }
+
+        isGameOver = true;
+        StopTextCoroutines();
+        HideTexts();
+        SetGameOverVisible(true);
+        Time.timeScale = 0f;
+        }
+
+    void RestartScene () {
+        Time.timeScale = 1f;
+        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
         }
 
     void HandleLook () {
@@ -74,10 +150,22 @@ public class PlsyerRadiconMonoBehaviourScript : MonoBehaviour {
         }
 
     void HandleMove () {
-        float h = Input.GetAxisRaw("Horizontal");
-        float v = Input.GetAxisRaw("Vertical");
+        float h = ApplyInputDeadzone(Input.GetAxisRaw("Horizontal"));
+        float v = ApplyInputDeadzone(Input.GetAxisRaw("Vertical"));
 
-        Vector3 move = ( transform.right * h + transform.forward * v ).normalized * moveSpeed;
+        Vector3 moveDirection = ( transform.right * h + transform.forward * v ).normalized;
+        Vector3 move = moveDirection * moveSpeed;
+
+        if (lastWallHitFrame == Time.frameCount && lastWallNormal != Vector3.zero && moveDirection != Vector3.zero) {
+            float moveIntoWall = Vector3.Dot(moveDirection, -lastWallNormal);
+            bool noStrafeInput = Mathf.Abs(h) < 0.001f;
+
+            if (moveIntoWall >= wallStickCancelThreshold && noStrafeInput) {
+                move = Vector3.zero;
+                } else if (moveIntoWall > 0f) {
+                move = Vector3.ProjectOnPlane(move, lastWallNormal);
+                }
+            }
 
         if (characterController != null) {
             if (characterController.isGrounded && verticalVelocity < 0f) {
@@ -91,4 +179,188 @@ public class PlsyerRadiconMonoBehaviourScript : MonoBehaviour {
             transform.position += move * Time.deltaTime;
             }
         }
+
+    float ApplyInputDeadzone (float axisValue) {
+        return Mathf.Abs(axisValue) < inputDeadzone ? 0f : axisValue;
+        }
+
+    void HandleKeyDoorInteraction () {
+        if (!Input.GetKeyDown(interactKey)) {
+            return;
+            }
+
+        bool isTouchingKey = TryGetNearbyObject("Kagi", out GameObject keyObject);
+        bool isTouchingDoor = IsTouchingDoor();
+        bool isTouchingCloseDoor = IsTouchingCloseDoor();
+
+        if (isTouchingCloseDoor) {
+            SetStageClearVisible(false);
+            SetKeyDoorVisible(false);
+
+            if (HasActiveBlock()) {
+                ShowCloseDoorTemporarily();
+                } else {
+                SetCloseDoorVisible(false);
+                }
+
+            return;
+            }
+
+        if (isTouchingKey && !hasKey && keyObject != null) {
+            hasKey = true;
+            keyObject.SetActive(false);
+            HideTexts();
+            return;
+            }
+
+        if (isTouchingDoor && hasKey) {
+            SetStageClearVisible(true);
+            SetKeyDoorVisible(false);
+            return;
+            }
+
+        if (isTouchingDoor && !hasKey) {
+            SetStageClearVisible(false);
+            ShowKeyDoorTemporarily();
+            return;
+            }
+
+        HideTexts();
+        }
+
+    bool IsTouchingDoor () {
+        return TryGetNearbyObject("Door", out _);
+        }
+
+    bool IsTouchingCloseDoor () {
+        return TryGetNearbyObject("CloseDoor", out _);
+        }
+
+    bool HasActiveBlock () {
+        return false;
+        }
+
+    bool TryGetNearbyObject (string nameFragment, out GameObject foundObject) {
+        Vector3 center = transform.position + Vector3.up * 0.5f;
+        Collider[] nearby = Physics.OverlapSphere(center, interactRange, ~0, QueryTriggerInteraction.Collide);
+
+        foreach (Collider current in nearby) {
+            if (current == null) {
+                continue;
+                }
+
+            GameObject target = current.gameObject;
+            if (target.name.Contains(nameFragment)) {
+                foundObject = target;
+                return true;
+                }
+            }
+
+        foundObject = null;
+        return false;
+        }
+
+    void ResolveUIReferences () {
+        if (stageClearText == null) {
+            GameObject stageClearObject = GameObject.Find("StageClearText");
+            if (stageClearObject != null) {
+                stageClearText = stageClearObject.GetComponent<TMP_Text>();
+                }
+            }
+
+        if (keyDoorText == null) {
+            GameObject keyDoorObject = GameObject.Find("KeyDoorText");
+            if (keyDoorObject != null) {
+                keyDoorText = keyDoorObject.GetComponent<TMP_Text>();
+                }
+            }
+
+        if (closeDoorText == null) {
+            GameObject closeDoorObject = GameObject.Find("CloseDoorText");
+            if (closeDoorObject != null) {
+                closeDoorText = closeDoorObject.GetComponent<TMP_Text>();
+                }
+            }
+
+        if (gameOverText == null) {
+            GameObject gameOverObject = GameObject.Find("GameOverText");
+            if (gameOverObject != null) {
+                gameOverText = gameOverObject.GetComponent<TMP_Text>();
+                }
+            }
+        }
+
+    void HideTexts () {
+        SetStageClearVisible(false);
+        SetKeyDoorVisible(false);
+        SetCloseDoorVisible(false);
+        SetGameOverVisible(false);
+        }
+
+    void StopTextCoroutines () {
+        if (keyDoorTextCoroutine != null) {
+            StopCoroutine(keyDoorTextCoroutine);
+            keyDoorTextCoroutine = null;
+            }
+
+        if (closeDoorTextCoroutine != null) {
+            StopCoroutine(closeDoorTextCoroutine);
+            closeDoorTextCoroutine = null;
+            }
+        }
+
+    void ShowKeyDoorTemporarily () {
+        if (keyDoorTextCoroutine != null) {
+            StopCoroutine(keyDoorTextCoroutine);
+            }
+
+        keyDoorTextCoroutine = StartCoroutine(ShowKeyDoorCoroutine());
+        }
+
+    IEnumerator ShowKeyDoorCoroutine () {
+        SetKeyDoorVisible(true);
+        yield return new WaitForSeconds(keyDoorTextDuration);
+        SetKeyDoorVisible(false);
+        keyDoorTextCoroutine = null;
+        }
+
+    void ShowCloseDoorTemporarily () {
+        if (closeDoorTextCoroutine != null) {
+            StopCoroutine(closeDoorTextCoroutine);
+            }
+
+        closeDoorTextCoroutine = StartCoroutine(ShowCloseDoorCoroutine());
+        }
+
+    IEnumerator ShowCloseDoorCoroutine () {
+        SetCloseDoorVisible(true);
+        yield return new WaitForSeconds(closeDoorTextDuration);
+        SetCloseDoorVisible(false);
+        closeDoorTextCoroutine = null;
+        }
+
+    void SetStageClearVisible (bool isVisible) {
+        if (stageClearText != null && stageClearText.gameObject.activeSelf != isVisible) {
+            stageClearText.gameObject.SetActive(isVisible);
+            }
+        }
+
+    void SetKeyDoorVisible (bool isVisible) {
+        if (keyDoorText != null && keyDoorText.gameObject.activeSelf != isVisible) {
+            keyDoorText.gameObject.SetActive(isVisible);
+            }
+        }
+
+    void SetCloseDoorVisible (bool isVisible) {
+        if (closeDoorText != null && closeDoorText.gameObject.activeSelf != isVisible) {
+            closeDoorText.gameObject.SetActive(isVisible);
+            }
+        }
+
+    void SetGameOverVisible (bool isVisible) {
+        if (gameOverText != null && gameOverText.gameObject.activeSelf != isVisible) {
+            gameOverText.gameObject.SetActive(isVisible);
+            }
+        }
     }
+
