@@ -132,7 +132,14 @@ public class RadiconChangeMonoBehaviourScript : MonoBehaviour {
         cameraController.ConfigureFollow(playerCameraOffset, playerCameraFollowSpeed);
         cameraController.ConfigureFixed(fixedCameraOffset, fixedCameraEulerAngles);
         }
+    public void ForceReturnToPlayerControl () {
+        if (!controlRadicon) {
+            return;
+            }
 
+        controlRadicon = false;
+        ApplyControlState();
+        }
     private void ApplyControlState () {
         if (playerController != null) {
             playerController.enabled = !controlRadicon;
