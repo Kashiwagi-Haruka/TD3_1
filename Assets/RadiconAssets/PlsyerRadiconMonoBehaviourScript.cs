@@ -189,7 +189,7 @@ public class PlsyerRadiconMonoBehaviourScript : MonoBehaviour {
             return;
             }
 
-        bool isTouchingKey = TryGetNearbyObject("Kagi", out GameObject keyObject);
+        bool isTouchingKey = TryGetNearbyKey(out KagiBehaviourScript nearbyKey);
         bool isTouchingDoor = IsTouchingDoor();
         bool isTouchingCloseDoor = IsTouchingCloseDoor();
 
@@ -206,9 +206,9 @@ public class PlsyerRadiconMonoBehaviourScript : MonoBehaviour {
             return;
             }
 
-        if (isTouchingKey && !hasKey && keyObject != null) {
+        if (isTouchingKey && !hasKey && nearbyKey != null) {
             hasKey = true;
-            keyObject.SetActive(false);
+            nearbyKey.gameObject.SetActive(false);
             HideTexts();
             return;
             }
@@ -235,6 +235,33 @@ public class PlsyerRadiconMonoBehaviourScript : MonoBehaviour {
     bool IsTouchingCloseDoor () {
         return TryGetNearbyObject("CloseDoor", out _);
         }
+
+    bool TryGetNearbyKey (out KagiBehaviourScript foundKey) {
+        Vector3 center = transform.position + Vector3.up * 0.5f;
+        Collider[] nearby = Physics.OverlapSphere(center, interactRange, ~0, QueryTriggerInteraction.Collide);
+
+        foreach (Collider current in nearby) {
+            if (current == null) {
+                continue;
+                }
+
+            KagiBehaviourScript key = current.GetComponentInParent<KagiBehaviourScript>();
+            if (key == null) {
+                key = current.GetComponent<KagiBehaviourScript>();
+                }
+
+            if (key == null || !key.gameObject.activeInHierarchy) {
+                continue;
+                }
+
+            foundKey = key;
+            return true;
+            }
+
+        foundKey = null;
+        return false;
+        }
+
 
     bool HasActiveBlock () {
         return false;
