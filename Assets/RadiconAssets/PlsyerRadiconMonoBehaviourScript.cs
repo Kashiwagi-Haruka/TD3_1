@@ -237,7 +237,7 @@ public class PlsyerRadiconMonoBehaviourScript : MonoBehaviour {
         }
 
     bool TryGetNearbyKey (out KagiBehaviourScript foundKey) {
-        Vector3 center = transform.position + Vector3.up * 0.5f;
+        Vector3 center = GetInteractionCenter();
         Collider[] nearby = Physics.OverlapSphere(center, interactRange, ~0, QueryTriggerInteraction.Collide);
 
         foreach (Collider current in nearby) {
@@ -268,7 +268,7 @@ public class PlsyerRadiconMonoBehaviourScript : MonoBehaviour {
         }
 
     bool TryGetNearbyObject (string nameFragment, out GameObject foundObject) {
-        Vector3 center = transform.position + Vector3.up * 0.5f;
+        Vector3 center = GetInteractionCenter();
         Collider[] nearby = Physics.OverlapSphere(center, interactRange, ~0, QueryTriggerInteraction.Collide);
 
         foreach (Collider current in nearby) {
@@ -285,6 +285,14 @@ public class PlsyerRadiconMonoBehaviourScript : MonoBehaviour {
 
         foundObject = null;
         return false;
+        }
+
+    Vector3 GetInteractionCenter () {
+        if (characterController != null) {
+            return characterController.bounds.center;
+            }
+
+        return transform.position;
         }
 
     void ResolveUIReferences () {
