@@ -385,7 +385,7 @@ public class RadiconMonoBehaviourScript : MonoBehaviour {
 
             if (hadMainCamera) {
                 yield return StartCoroutine(FadeScreen(0f, 1f, movieFadeDuration));
-                PlaceCameraTowardBlock(mainCamera.transform, blockTransform);
+                PlaceCameraInFrontOfRadicon(mainCamera.transform, blockTransform);
                 yield return new WaitForSeconds(movieBlackHoldDuration);
                 yield return StartCoroutine(FadeScreen(1f, 0f, movieFadeDuration));
                 }
@@ -460,20 +460,20 @@ public class RadiconMonoBehaviourScript : MonoBehaviour {
         movieNoiseImage.color = endColor;
         }
 
-    private void PlaceCameraTowardBlock (Transform cameraTransform, Transform blockTransform) {
-        if (cameraTransform == null || blockTransform == null) {
+    private void PlaceCameraInFrontOfRadicon (Transform cameraTransform, Transform radiconTransform) {
+        if (cameraTransform == null || radiconTransform == null) {
             return;
             }
 
-        Vector3 blockForward = blockTransform.forward;
-        blockForward.y = 0f;
-        if (blockForward.sqrMagnitude < 0.0001f) {
-            blockForward = Vector3.forward;
+        Vector3 radiconForward = radiconTransform.forward;
+        radiconForward.y = 0f;
+        if (radiconForward.sqrMagnitude < 0.0001f) {
+            radiconForward = Vector3.forward;
             }
 
-        blockForward.Normalize();
-        Vector3 focusPoint = blockTransform.position + movieCameraLookOffset;
-        cameraTransform.position = focusPoint - blockForward * movieCameraDistance + Vector3.up * movieCameraHeight;
+        radiconForward.Normalize();
+        Vector3 focusPoint = radiconTransform.position + movieCameraLookOffset;
+        cameraTransform.position = focusPoint + radiconForward * movieCameraDistance + Vector3.up * movieCameraHeight;
         cameraTransform.LookAt(focusPoint);
         }
 
