@@ -349,6 +349,10 @@ public class RadiconMonoBehaviourScript : MonoBehaviour {
 
         EnsureMovieOverlay(mainCamera);
 
+        if (enemyForMovie != null) {
+            enemyForMovie.SetMovementPaused(true);
+            }
+
         Transform blockTransform = blockCollider.transform;
         Transform enemyTransform = enemyForMovie == null ? null : enemyForMovie.transform;
 
@@ -422,7 +426,9 @@ public class RadiconMonoBehaviourScript : MonoBehaviour {
             rb.constraints = originalConstraints;
             rb.useGravity = originalUseGravity;
             }
-
+        if (enemyForMovie != null) {
+            enemyForMovie.SetMovementPaused(false);
+            }
         if (blockCollider != null) {
             Destroy(blockCollider.gameObject);
             SpawnRedParticles(blockPoint);
