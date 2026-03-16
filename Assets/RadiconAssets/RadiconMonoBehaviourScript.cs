@@ -363,6 +363,7 @@ public class RadiconMonoBehaviourScript : MonoBehaviour {
 
         Vector3 radiconStartPosition = blockGroundPoint - blockForward * movieBlockForwardOffset;
         Vector3 enemyStartPosition = radiconStartPosition - blockForward * movieEnemyBehindOffset;
+        HideBlockForMovie(blockCollider);
 
         if (rb != null) {
             RigidbodyConstraints originalConstraints = rb.constraints;
@@ -433,7 +434,22 @@ public class RadiconMonoBehaviourScript : MonoBehaviour {
 
         isPlayingMovie = false;
         }
+    private void HideBlockForMovie (Collider blockCollider) {
+        if (blockCollider == null) {
+            return;
+            }
 
+        Renderer[] blockRenderers = blockCollider.GetComponentsInChildren<Renderer>(true);
+        foreach (Renderer hiddenRenderer in blockRenderers) {
+            if (hiddenRenderer == null) {
+                continue;
+                }
+
+            hiddenRenderer.enabled = false;
+            }
+
+        blockCollider.enabled = false;
+        }
     private IEnumerator FadeScreen (float fromAlpha, float toAlpha, float duration) {
         if (movieNoiseImage == null) {
             yield break;
