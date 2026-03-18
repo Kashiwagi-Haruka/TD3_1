@@ -2,34 +2,69 @@ using UnityEngine;
 
 public class EnemyMonoBehaviourScript : MonoBehaviour {
     [Header("Wander")]
+    // 移動速度
     [SerializeField] float moveSpeed = 2f;
+    // turnSpeed
     [SerializeField] float turnSpeed = 5f;
+    // wanderRadius
     [SerializeField] float wanderRadius = 6f;
+    // minIdleTime
     [SerializeField] float minIdleTime = 0.6f;
+    // maxIdleTime
     [SerializeField] float maxIdleTime = 2f;
+    // stopDistance
     [SerializeField] float stopDistance = 0.2f;
 
     [Header("Sikai")]
+    // sikai
     [SerializeField] Transform sikai;
+    // sikaiForwardOffset
     [SerializeField] float sikaiForwardOffset = 1.0f;
+    // sikaiDownOffset
     [SerializeField] float sikaiDownOffset = 0.0f;
 
-    Vector3 originPosition;
-    Vector3 targetPosition;
-    float idleTimer;
-    bool isMovementPaused;
+    [Header("Dark Aura")]
+    // 色
+    // Color の処理
+    [SerializeField] Color auraColor = new Color(0f, 0f, 0f, 0.9f);
+    // auraSize
+    [SerializeField] float auraSize = 0.12f;
+    // auraLifetime
+    [SerializeField] float auraLifetime = 0.6f;
+    // auraRateOverTime
+    [SerializeField] float auraRateOverTime = 45f;
+    // auraRadius
+    [SerializeField] float auraRadius = 0.35f;
+    // auraUpwardSpeed
+    [SerializeField] float auraUpwardSpeed = 0.15f;
 
+    // originPosition
+    Vector3 originPosition;
+    // targetPosition
+    Vector3 targetPosition;
+    // idleTimer
+    float idleTimer;
+    // isMovementPaused
+    bool isMovementPaused;
+    // auraParticleSystem
+    ParticleSystem auraParticleSystem;
+
+    // SetMovementPaused の処理
     public void SetMovementPaused (bool isPaused) {
         isMovementPaused = isPaused;
         }
 
+    // シーン開始時の初期化
     void Start () {
         originPosition = transform.position;
         ResolveSikaiIfNeeded();
+        EnsureDarkAura();
         UpdateSikaiPosition();
         PickNextTarget();
         }
 
+    // 毎フレームの入力処理や状態更新
+    // 毎フレームの処理
     void Update () {
         UpdateSikaiPosition();
 
@@ -57,14 +92,20 @@ public class EnemyMonoBehaviourScript : MonoBehaviour {
         Quaternion targetRotation = Quaternion.LookRotation(moveDirection, Vector3.up);
         transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, turnSpeed * Time.deltaTime);
         }
+    // 衝突した相手に応じた処理
+    // 衝突した相手に応じた処理
     void OnCollisionEnter (Collision collision) {
         TryFillPortalNoise(collision.collider);
         }
 
+    // トリガーに触れた相手に応じた処理
+    // トリガー接触時の処理
     void OnTriggerEnter (Collider other) {
         TryFillPortalNoise(other);
         }
 
+    // 試行満たすポータルノイズを試行
+    // TryFillPortalNoise の処理
     void TryFillPortalNoise (Collider hitCollider) {
         if (hitCollider == null) {
             return;
@@ -78,16 +119,21 @@ public class EnemyMonoBehaviourScript : MonoBehaviour {
         radicon.FillPortalsWithBlackAndWhiteNoise();
         }
 
+    // picknext対象を決定
+    // PickNextTarget の処理
     void PickNextTarget () {
         Vector2 randomCircle = Random.insideUnitCircle * wanderRadius;
         targetPosition = originPosition + new Vector3(randomCircle.x, 0f, randomCircle.y);
         }
 
+    // ondrawgizmosselected
+    // OnDrawGizmosSelected の処理
     void OnDrawGizmosSelected () {
         Gizmos.color = Color.red;
         Gizmos.DrawWireSphere(Application.isPlaying ? originPosition : transform.position, wanderRadius);
         }
 
+    // ResolveSikaiIfNeeded の処理
     void ResolveSikaiIfNeeded () {
         if (sikai != null) {
             return;
@@ -100,8 +146,65 @@ public class EnemyMonoBehaviourScript : MonoBehaviour {
         }
 
 
+    // EnsureDarkAura の処理
+    void EnsureDarkAura () {
+        if (auraParticleSystem != null) {
+            return;
+            }
+
+        Transform auraTransform = transform.Find("DarkAuraParticles");
+        if (auraTransform != null) {
+            auraParticleSystem = auraTransform.GetComponent<ParticleSystem>();
+            if (auraParticleSystem != null) {
+                return;
+                }
+            }
+
+        GameObject auraObject = new GameObject("DarkAuraParticles");
+        auraObject.transform.SetParent(transform, false);
+        auraObject.transform.localPosition = Vector3.zero;
+
+        auraParticleSystem = auraObject.AddComponent<ParticleSystem>();
+
+        ParticleSystem.MainModule main = auraParticleSystem.main;
+        main.loop = true;
+        main.playOnAwake = true;
+        main.startColor = auraColor;
+        main.startSize = auraSize;
+        main.startLifetime = auraLifetime;
+        main.startSpeed = auraUpwardSpeed;
+        main.simulationSpace = ParticleSystemSimulationSpace.Local;
+
+        ParticleSystem.EmissionModule emission = auraParticleSystem.emission;
+        emission.rateOverTime = auraRateOverTime;
+
+        ParticleSystem.ShapeModule shape = auraParticleSystem.shape;
+        shape.shapeType = ParticleSystemShapeType.Sphere;
+        shape.radius = auraRadius;
+
+        ParticleSystem.ColorOverLifetimeModule colorOverLifetime = auraParticleSystem.colorOverLifetime;
+        colorOverLifetime.enabled = true;
+        Gradient fadeGradient = new Gradient();
+        fadeGradient.SetKeys(
+            new[] {
+                new GradientColorKey(Color.black, 0f),
+                new GradientColorKey(Color.black, 1f),
+            },
+            new[] {
+                new GradientAlphaKey(0.85f, 0f),
+                new GradientAlphaKey(0.2f, 0.75f),
+                new GradientAlphaKey(0f, 1f),
+            }
+        );
+        colorOverLifetime.color = fadeGradient;
+
+        auraParticleSystem.Play();
+        }
+
+
+    // UpdateSikaiPosition の処理
     void UpdateSikaiPosition () {
-        ResolveSikaiIfNeeded();
+    ResolveSikaiIfNeeded ();
         if (sikai == null) {
             return;
             }

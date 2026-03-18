@@ -3,44 +3,71 @@ using UnityEngine.SceneManagement;
 
 public class RadiconSceneMonoBehaviourScript : MonoBehaviour {
     [Header("Scene")]
+    // targetSceneName
     [SerializeField] private string targetSceneName = "RadiconScene";
+    // createOnStart
     [SerializeField] private bool createOnStart = true;
 
     [Header("Direct Object Assignments (Scene object or Prefab)")]
+    // floorObject
     [SerializeField] private GameObject floorObject;
+    // playerObject
     [SerializeField] private GameObject playerObject;
+    // radiconObject
     [SerializeField] private GameObject radiconObject;
+    // wallObjects
     [SerializeField] private GameObject[] wallObjects;
 
     [Header("Additional Attach Objects")]
+    // enemyObject
     [SerializeField] private GameObject enemyObject;
+    // keyObject
     [SerializeField] private GameObject keyObject;
+    // doorObject
     [SerializeField] private GameObject doorObject;
+    // closeDoorObject
     [SerializeField] private GameObject closeDoorObject;
+    // blockObject
     [SerializeField] private GameObject blockObject;
+    // candleObject
     [SerializeField] private GameObject candleObject;
+    // extraSceneObjects
     [SerializeField] private GameObject[] extraSceneObjects;
 
     [Header("Spawn Points")]
+    // floorSpawnPoint
     [SerializeField] private Transform floorSpawnPoint;
+    // playerSpawnPoint
     [SerializeField] private Transform playerSpawnPoint;
+    // radiconSpawnPoint
     [SerializeField] private Transform radiconSpawnPoint;
 
     [Header("Wall Spawn Points (optional)")]
+    // frontWallSpawnPoint
     [SerializeField] private Transform frontWallSpawnPoint;
+    // backWallSpawnPoint
     [SerializeField] private Transform backWallSpawnPoint;
+    // leftWallSpawnPoint
     [SerializeField] private Transform leftWallSpawnPoint;
+    // rightWallSpawnPoint
     [SerializeField] private Transform rightWallSpawnPoint;
 
     [Header("Fallback Names")]
+    // generatedFloorName
     [SerializeField] private string generatedFloorName = "Floor Generated";
+    // generatedPlayerName
     [SerializeField] private string generatedPlayerName = "Player Generated";
+    // generatedRadiconName
     [SerializeField] private string generatedRadiconName = "Radicon Generated";
+    // generatedWallNamePrefix
     [SerializeField] private string generatedWallNamePrefix = "Wall Generated";
 
+    // bootstrapRegistered
     private static bool bootstrapRegistered;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
+    // 登録bootstrapper
+    // RegisterBootstrapper の処理
     private static void RegisterBootstrapper () {
         if (bootstrapRegistered) {
             return;
@@ -50,6 +77,8 @@ public class RadiconSceneMonoBehaviourScript : MonoBehaviour {
         SceneManager.sceneLoaded += HandleSceneLoaded;
         }
 
+    // handleシーン読み込み済み
+    // HandleSceneLoaded の処理
     private static void HandleSceneLoaded (Scene scene, LoadSceneMode mode) {
         if (!scene.IsValid() || !scene.isLoaded) {
             return;
@@ -65,6 +94,7 @@ public class RadiconSceneMonoBehaviourScript : MonoBehaviour {
         bootstrapper.TryCreateRadiconSceneObjects(scene);
         }
 
+    // シーン開始時の初期化
     private void Start () {
         if (!createOnStart) {
             return;
@@ -73,6 +103,8 @@ public class RadiconSceneMonoBehaviourScript : MonoBehaviour {
         TryCreateRadiconSceneObjects(SceneManager.GetActiveScene());
         }
 
+    // 試行生成ラジコンシーンobjectsを試行
+    // TryCreateRadiconSceneObjects の処理
     private void TryCreateRadiconSceneObjects (Scene scene) {
         if (!ShouldCreateInScene(scene)) {
             return;
@@ -85,6 +117,8 @@ public class RadiconSceneMonoBehaviourScript : MonoBehaviour {
         TryEnsureAttachObjects();
         }
 
+    // should生成inシーン
+    // ShouldCreateInScene の処理
     private bool ShouldCreateInScene (Scene scene) {
         if (!scene.IsValid() || !scene.isLoaded) {
             return false;
@@ -93,6 +127,8 @@ public class RadiconSceneMonoBehaviourScript : MonoBehaviour {
         return string.IsNullOrWhiteSpace(targetSceneName) || scene.name == targetSceneName;
         }
 
+    // 試行確保attachobjectsを試行
+    // TryEnsureAttachObjects の処理
     private void TryEnsureAttachObjects () {
         enemyObject = EnsureAttachedObject(enemyObject, "EnemyPrefab");
         keyObject = EnsureAttachedObject(keyObject, "KagiPrefab");
@@ -110,6 +146,7 @@ public class RadiconSceneMonoBehaviourScript : MonoBehaviour {
             }
         }
 
+    // EnsureAttachedObject の処理
     private GameObject EnsureAttachedObject (GameObject target, string sceneNameFallback) {
         if (target != null && target.scene.IsValid()) {
             target.SetActive(true);
@@ -135,6 +172,8 @@ public class RadiconSceneMonoBehaviourScript : MonoBehaviour {
         return null;
         }
 
+    // 試行生成床を試行
+    // TryCreateFloor の処理
     private void TryCreateFloor () {
         if (( floorObject != null && floorObject.scene.IsValid() ) || GameObject.Find("floor") != null || GameObject.Find(generatedFloorName) != null) {
             return;
@@ -150,6 +189,8 @@ public class RadiconSceneMonoBehaviourScript : MonoBehaviour {
         floorBody.isKinematic = true;
         }
 
+    // 試行生成wallsを試行
+    // TryCreateWalls の処理
     private void TryCreateWalls () {
         if (FindAnyObjectByType<WallMarker>() != null || GameObject.Find("WallPrefab") != null) {
             return;
@@ -198,12 +239,15 @@ public class RadiconSceneMonoBehaviourScript : MonoBehaviour {
             }
         }
 
+    // EnsureWallArray の処理
     private void EnsureWallArray () {
         if (wallObjects == null || wallObjects.Length != 4) {
             wallObjects = new GameObject[4];
             }
         }
 
+    // 試行生成プレイヤーを試行
+    // TryCreatePlayer の処理
     private void TryCreatePlayer () {
         if (FindAnyObjectByType<PlsyerRadiconMonoBehaviourScript>() != null) {
             return;
@@ -226,6 +270,8 @@ public class RadiconSceneMonoBehaviourScript : MonoBehaviour {
         EnsurePlayerCamera(playerObject.transform, playerController);
         }
 
+    // 試行生成ラジコンを試行
+    // TryCreateRadicon の処理
     private void TryCreateRadicon () {
         if (FindAnyObjectByType<RadiconMonoBehaviourScript>() != null) {
             return;
@@ -259,6 +305,7 @@ public class RadiconSceneMonoBehaviourScript : MonoBehaviour {
             }
         }
 
+    // ResolveOrInstantiate の処理
     private GameObject ResolveOrInstantiate (GameObject source, string fallbackName, Transform spawnPoint, Vector3 fallbackScale, PrimitiveType primitiveType) {
         if (source == null) {
             GameObject generated = GameObject.CreatePrimitive(primitiveType);
@@ -279,6 +326,7 @@ public class RadiconSceneMonoBehaviourScript : MonoBehaviour {
         return instance;
         }
 
+    // ApplySpawn の処理
     private void ApplySpawn (Transform target, Transform spawnPoint, Vector3 fallbackScale) {
         if (spawnPoint != null) {
             target.SetPositionAndRotation(spawnPoint.position, spawnPoint.rotation);
@@ -289,6 +337,7 @@ public class RadiconSceneMonoBehaviourScript : MonoBehaviour {
             }
         }
 
+    // EnsurePlayerCamera の処理
     private void EnsurePlayerCamera (Transform playerTransform, PlsyerRadiconMonoBehaviourScript playerController) {
         Transform playerCameraTransform = playerTransform.Find("PlayerCamera");
         GameObject cameraObject = playerCameraTransform == null ? new GameObject("PlayerCamera") : playerCameraTransform.gameObject;
@@ -308,6 +357,7 @@ public class RadiconSceneMonoBehaviourScript : MonoBehaviour {
         playerController.viewPivot = cameraObject.transform;
         }
 
+    // CreateGroundCheck の処理
     private void CreateGroundCheck (Transform parent) {
         GameObject groundCheck = new GameObject("GroundCheck");
         groundCheck.transform.SetParent(parent, false);

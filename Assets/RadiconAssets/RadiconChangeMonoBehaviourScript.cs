@@ -2,30 +2,44 @@ using UnityEngine;
 
 public class RadiconChangeMonoBehaviourScript : MonoBehaviour {
     [Header("Targets")]
+    // playerController
     [SerializeField] private PlsyerRadiconMonoBehaviourScript playerController;
+    // radiconController
     [SerializeField] private RadiconMonoBehaviourScript radiconController;
+    // playerTransform
     [SerializeField] private Transform playerTransform;
+    // radiconTransform
     [SerializeField] private Transform radiconTransform;
 
     [Header("Switch")]
+    // activateKey
     [SerializeField] private KeyCode activateKey = KeyCode.E;
+    // returnKey
     [SerializeField] private KeyCode returnKey = KeyCode.R;
+    // touchDistance
     [SerializeField] private float touchDistance = 1.35f;
 
     [Header("UI")]
+    // handSprite
     [SerializeField] private GameObject handSprite;
 
     [Header("Camera")]
     [SerializeField] private Vector3 playerCameraOffset = new Vector3(0f, 1.8f, -3f);
+    // playerCameraFollowSpeed
     [SerializeField] private float playerCameraFollowSpeed = 9f;
     [SerializeField] private Vector3 fixedCameraOffset = new Vector3(0f, 1.8f, -3f);
     [SerializeField] private Vector3 fixedCameraEulerAngles = new Vector3(0f, 90f, 0f);
+    // playerRenderers
     private Renderer[] playerRenderers = System.Array.Empty<Renderer>();
 
+    // controlRadicon
     private bool controlRadicon;
+    // isPlayerTouching
     private bool isPlayerTouching;
+    // cameraController
     private CameraMonoBehaviourScript cameraController;
 
+    // 参照の取得や初期設定
     private void Awake () {
         ConfigureSwitchCollision();
         ResolveTargetsIfNeeded();
@@ -35,6 +49,7 @@ public class RadiconChangeMonoBehaviourScript : MonoBehaviour {
         SetHandSpriteVisible(false);
         }
 
+    // ConfigureSwitchCollision の処理
     private void ConfigureSwitchCollision () {
         Collider[] colliders = GetComponents<Collider>();
         foreach (Collider currentCollider in colliders) {
@@ -52,6 +67,8 @@ public class RadiconChangeMonoBehaviourScript : MonoBehaviour {
         attachedRigidbody.useGravity = false;
         }
 
+    // 毎フレームの入力処理や状態更新
+    // 毎フレームの処理
     private void Update () {
         ResolveTargetsIfNeeded();
 
@@ -75,6 +92,7 @@ public class RadiconChangeMonoBehaviourScript : MonoBehaviour {
             }
         }
 
+    // ResolveTargetsIfNeeded の処理
     private void ResolveTargetsIfNeeded () {
         if (!IsSceneComponent(playerController)) {
             playerController = FindAnyObjectByType<PlsyerRadiconMonoBehaviourScript>();
@@ -94,6 +112,7 @@ public class RadiconChangeMonoBehaviourScript : MonoBehaviour {
             }
         }
 
+    // CachePlayerRenderers の処理
     private void CachePlayerRenderers () {
         if (playerTransform == null) {
             playerRenderers = System.Array.Empty<Renderer>();
@@ -103,14 +122,17 @@ public class RadiconChangeMonoBehaviourScript : MonoBehaviour {
         playerRenderers = playerTransform.GetComponentsInChildren<Renderer>(true);
         }
 
+    // IsSceneComponent の処理
     private bool IsSceneComponent (MonoBehaviour component) {
         return component != null && component.gameObject.scene.IsValid() && component.gameObject.scene.isLoaded;
         }
 
+    // Transform が有効なシーン上のオブジェクトか判定
     private bool IsSceneTransform (Transform target) {
         return target != null && target.gameObject.scene.IsValid() && target.gameObject.scene.isLoaded;
         }
 
+    // EnsureCameraController の処理
     private void EnsureCameraController () {
         UnityEngine.Camera mainCamera = UnityEngine.Camera.main;
         if (mainCamera == null) {
@@ -123,6 +145,7 @@ public class RadiconChangeMonoBehaviourScript : MonoBehaviour {
             }
         }
 
+    // ConfigureCameraController の処理
     private void ConfigureCameraController () {
         if (cameraController == null) {
             return;
@@ -132,6 +155,8 @@ public class RadiconChangeMonoBehaviourScript : MonoBehaviour {
         cameraController.ConfigureFollow(playerCameraOffset, playerCameraFollowSpeed);
         cameraController.ConfigureFixed(fixedCameraOffset, fixedCameraEulerAngles);
         }
+    // 強制戻るtoプレイヤーcontrol
+    // ForceReturnToPlayerControl の処理
     public void ForceReturnToPlayerControl () {
         if (!controlRadicon) {
             return;
@@ -140,6 +165,7 @@ public class RadiconChangeMonoBehaviourScript : MonoBehaviour {
         controlRadicon = false;
         ApplyControlState();
         }
+    // ApplyControlState の処理
     private void ApplyControlState () {
         if (playerController != null) {
             playerController.enabled = !controlRadicon;
@@ -156,6 +182,7 @@ public class RadiconChangeMonoBehaviourScript : MonoBehaviour {
             }
         }
 
+    // SetPlayerVisualVisible の処理
     private void SetPlayerVisualVisible (bool isVisible) {
         if (playerRenderers.Length == 0) {
             CachePlayerRenderers();
@@ -170,6 +197,7 @@ public class RadiconChangeMonoBehaviourScript : MonoBehaviour {
             }
         }
 
+    // IsPlayerTouchingRadiconChange の処理
     private bool IsPlayerTouchingRadiconChange () {
         if (playerTransform == null) {
             return false;
@@ -180,6 +208,7 @@ public class RadiconChangeMonoBehaviourScript : MonoBehaviour {
         return horizontalDelta.sqrMagnitude <= touchDistance * touchDistance;
         }
 
+    // SetHandSpriteVisible の処理
     private void SetHandSpriteVisible (bool isVisible) {
         if (handSprite == null) {
             return;
