@@ -5,78 +5,133 @@ using UnityEngine.UI;
 [RequireComponent(typeof(Rigidbody))]
 public class RadiconMonoBehaviourScript : MonoBehaviour {
     [Header("Driving")]
+    // acceleration
     [SerializeField] private float acceleration = 20f;
+    // maxSpeed
     [SerializeField] private float maxSpeed = 8f;
+    // turnSpeed
     [SerializeField] private float turnSpeed = 120f;
+    // lateralGrip
     [SerializeField] private float lateralGrip = 12f;
 
     [Header("Stability")]
+    // dragOnGround
     [SerializeField] private float dragOnGround = 3.2f;
+    // angularDragOnGround
     [SerializeField] private float angularDragOnGround = 8f;
+    // maxYawAngularSpeed
     [SerializeField] private float maxYawAngularSpeed = 2.5f;
+    // yawSpinDamping
     [SerializeField] private float yawSpinDamping = 18f;
+    // keepOnGroundPlane
     [SerializeField] private bool keepOnGroundPlane = true;
 
     [Header("Ground Check")]
+    // groundCheck
     [SerializeField] private Transform groundCheck;
+    // groundCheckRadius
     [SerializeField] private float groundCheckRadius = 0.35f;
+    // groundLayers
     [SerializeField] private LayerMask groundLayers = ~0;
 
     [Header("Portal")]
+    // topPortalTarget
     [SerializeField] private Transform topPortalTarget;
+    // floatingPortalTarget
     [SerializeField] private Transform floatingPortalTarget;
     [SerializeField] private Vector3 topPortalLocalPosition = new Vector3(0f, 0.6f, 0f);
     [SerializeField] private Vector3 floatingPortalLocalPosition = new Vector3(0f, 1.4f, 0.25f);
+    // topPortalLocalEulerAngles
     [SerializeField] private Vector3 topPortalLocalEulerAngles = Vector3.zero;
     [SerializeField] private Vector3 floatingPortalLocalEulerAngles = new Vector3(-90f, 0f, 0f);
     [SerializeField] private Vector3 portalLocalScale = new Vector3(0.45f, 0.25f, 1f);
     [SerializeField] private Vector3 portalForwardCameraLocalPosition = new Vector3(0f, 0.35f, 0.85f);
+    // portalCameraFarClipPlane
     [SerializeField] private float portalCameraFarClipPlane = 80f;
+    // portalRenderTextureSize
     [SerializeField] private int portalRenderTextureSize = 512;
+    // 色
+    // Color の処理
     [SerializeField] private Color portalVisibleColor = new Color(0.2f, 0.9f, 1f, 1f);
+    // portalNoiseTextureSize
     [SerializeField] private int portalNoiseTextureSize = 128;
+    // portalNoiseScrollSpeed
     [SerializeField] private float portalNoiseScrollSpeed = 1.2f;
     [Header("Interaction")]
+    // 調べる操作に使うキー
     [SerializeField] private KeyCode interactKey = KeyCode.E;
+    // candlePickupRange
     [SerializeField] private float candlePickupRange = 1.5f;
+    // blockCheckRange
     [SerializeField] private float blockCheckRange = 1.3f;
+    // interactionHeightOffset
     [SerializeField] private float interactionHeightOffset = 0.35f;
+    // particleBurstCount
     [SerializeField] private int particleBurstCount = 25;
+    // particleLifetime
     [SerializeField] private float particleLifetime = 0.6f;
+    // particleSpeed
     [SerializeField] private float particleSpeed = 2.5f;
 
     [Header("Block Movie")]
+    // enemyForMovie
     [SerializeField] private EnemyMonoBehaviourScript enemyForMovie;
+    // movieFadeDuration
     [SerializeField] private float movieFadeDuration = 0.35f;
+    // movieBlackHoldDuration
     [SerializeField] private float movieBlackHoldDuration = 0.2f;
+    // movieLiftDelay
     [SerializeField] private float movieLiftDelay = 1f;
+    // movieLiftDuration
     [SerializeField] private float movieLiftDuration = 0.55f;
+    // movieLiftHeight
     [SerializeField] private float movieLiftHeight = 1.5f;
+    // movieRotateDuration
     [SerializeField] private float movieRotateDuration = 0.65f;
+    // movieNoiseDelayAfterRotate
     [SerializeField] private float movieNoiseDelayAfterRotate = 0.5f;
+    // movieScreenNoiseDuration
     [SerializeField] private float movieScreenNoiseDuration = 1f;
+    // movieFinalHoldDuration
     [SerializeField] private float movieFinalHoldDuration = 0.2f;
+    // movieBlockForwardOffset
     [SerializeField] private float movieBlockForwardOffset = 1.45f;
+    // movieEnemyBehindOffset
     [SerializeField] private float movieEnemyBehindOffset = 2.2f;
+    // movieCameraDistance
     [SerializeField] private float movieCameraDistance = 4.2f;
+    // movieCameraHeight
     [SerializeField] private float movieCameraHeight = 2.1f;
     [SerializeField] private Vector3 movieCameraLookOffset = new Vector3(0f, 0.8f, 0f);
 
     [Header("Movie Noise Overlay")]
+    // screenNoiseAlpha
     [SerializeField] private float screenNoiseAlpha = 0.9f;
 
+    // heldCandle
     private RousokuMonoBehaviourScript heldCandle;
+    // rb
     private Rigidbody rb;
+    // portalRenderers
     private MeshRenderer[] portalRenderers = System.Array.Empty<MeshRenderer>();
+    // portalBaseMaterials
     private Material[] portalBaseMaterials = System.Array.Empty<Material>();
+    // isPortalNoiseActive
     private bool isPortalNoiseActive;
+    // portalNoiseOffset
     private Vector2 portalNoiseOffset;
+    // isPlayingMovie
     private bool isPlayingMovie;
+    // activePortalNoiseTexture
     private Texture2D activePortalNoiseTexture;
+    // movieOverlayCanvas
     private Canvas movieOverlayCanvas;
+    // movieNoiseImage
     private RawImage movieNoiseImage;
+    // activeScreenNoiseTexture
     private Texture2D activeScreenNoiseTexture;
 
+    // 参照の取得や初期設定
     private void Awake () {
         rb = GetComponent<Rigidbody>();
         rb.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
@@ -98,6 +153,7 @@ public class RadiconMonoBehaviourScript : MonoBehaviour {
             }
         }
 
+    // ResolvePortalTargets の処理
     private void ResolvePortalTargets () {
         topPortalTarget = ResolveSceneTransformReference(topPortalTarget);
         if (!IsSceneTransform(topPortalTarget)) {
@@ -110,6 +166,7 @@ public class RadiconMonoBehaviourScript : MonoBehaviour {
             }
         }
 
+    // ResolveSceneTransformReference の処理
     private Transform ResolveSceneTransformReference (Transform target) {
         if (IsSceneTransform(target)) {
             return target;
@@ -123,10 +180,12 @@ public class RadiconMonoBehaviourScript : MonoBehaviour {
         return sceneObjectWithSameName == null ? null : sceneObjectWithSameName.transform;
         }
 
+    // Transform が有効なシーン上のオブジェクトか判定
     private bool IsSceneTransform (Transform target) {
         return target != null && target.gameObject.scene.IsValid();
         }
 
+    // EnsurePortalPair の処理
     private void EnsurePortalPair () {
         Transform topPortalTransform = transform.Find("TopPortal");
         Transform floatingPortalTransform = transform.Find("FloatingPortal");
@@ -173,6 +232,7 @@ public class RadiconMonoBehaviourScript : MonoBehaviour {
         portalCamera.fieldOfView = 65f;
         }
 
+    // CachePortalRenderers の処理
     private void CachePortalRenderers (GameObject topPortal, GameObject floatingPortal) {
         MeshRenderer topPortalRenderer = topPortal == null ? null : topPortal.GetComponent<MeshRenderer>();
         MeshRenderer floatingPortalRenderer = floatingPortal == null ? null : floatingPortal.GetComponent<MeshRenderer>();
@@ -190,10 +250,13 @@ public class RadiconMonoBehaviourScript : MonoBehaviour {
         }
 
 
+    // 満たすportalswith暗転andwhiteノイズ
+    // FillPortalsWithBlackAndWhiteNoise の処理
     public void FillPortalsWithBlackAndWhiteNoise () {
         SetPortalNoiseActive(true);
         }
 
+    // UpdatePortalNoise の処理
     private void UpdatePortalNoise () {
         if (!isPortalNoiseActive || portalRenderers.Length == 0) {
             return;
@@ -215,6 +278,8 @@ public class RadiconMonoBehaviourScript : MonoBehaviour {
             }
         }
 
+    // 生成暗転andwhiteノイズテクスチャ
+    // BuildBlackAndWhiteNoiseTexture の処理
     private Texture2D BuildBlackAndWhiteNoiseTexture () {
         int textureSize = Mathf.Max(16, portalNoiseTextureSize);
         Texture2D noiseTexture = new Texture2D(textureSize, textureSize, TextureFormat.RGB24, false);
@@ -231,6 +296,7 @@ public class RadiconMonoBehaviourScript : MonoBehaviour {
         noiseTexture.Apply();
         return noiseTexture;
         }
+    // CreatePortalSurface の処理
     private GameObject CreatePortalSurface (string portalName, Transform parentTarget, Vector3 localPosition, Vector3 localEulerAngles) {
         GameObject portalObject = new GameObject(portalName);
         MeshFilter meshFilter = portalObject.AddComponent<MeshFilter>();
@@ -249,6 +315,7 @@ public class RadiconMonoBehaviourScript : MonoBehaviour {
         return portalObject;
         }
 
+    // RemovePortalCollider の処理
     private void RemovePortalCollider (GameObject portalObject) {
         if (portalObject == null) {
             return;
@@ -260,6 +327,8 @@ public class RadiconMonoBehaviourScript : MonoBehaviour {
             }
         }
 
+    // reattachポータル
+    // ReattachPortal の処理
     private void ReattachPortal (Transform portalTransform, Transform parentTarget, Vector3 localPosition, Vector3 localEulerAngles) {
         if (portalTransform == null) {
             return;
@@ -276,6 +345,8 @@ public class RadiconMonoBehaviourScript : MonoBehaviour {
         }
 
 
+    // 関連付けポータルテクスチャ
+    // BindPortalTexture の処理
     private void BindPortalTexture (GameObject portalObject, RenderTexture renderTexture) {
         MeshRenderer portalRenderer = portalObject.GetComponent<MeshRenderer>();
         if (portalRenderer == null) {
@@ -304,11 +375,15 @@ public class RadiconMonoBehaviourScript : MonoBehaviour {
 
         portalRenderer.material = portalMaterial;
         }
+    // 毎フレームの入力処理や状態更新
+    // 毎フレームの処理
     private void Update () {
         UpdatePortalNoise();
         HandleInteract();
         }
 
+    // handle操作
+    // HandleInteract の処理
     private void HandleInteract () {
         if (isPlayingMovie) {
             return;
@@ -328,6 +403,8 @@ public class RadiconMonoBehaviourScript : MonoBehaviour {
             }
         }
 
+    // playブロック演出
+    // PlayBlockMovie の処理
     private IEnumerator PlayBlockMovie (Collider blockCollider, Vector3 blockPoint) {
         if (blockCollider == null) {
             yield break;
@@ -434,6 +511,8 @@ public class RadiconMonoBehaviourScript : MonoBehaviour {
 
         isPlayingMovie = false;
         }
+    // hideブロックfor演出
+    // HideBlockForMovie の処理
     private void HideBlockForMovie (Collider blockCollider) {
         if (blockCollider == null) {
             return;
@@ -450,6 +529,8 @@ public class RadiconMonoBehaviourScript : MonoBehaviour {
 
         blockCollider.enabled = false;
         }
+    // フェード画面
+    // FadeScreen の処理
     private IEnumerator FadeScreen (float fromAlpha, float toAlpha, float duration) {
         if (movieNoiseImage == null) {
             yield break;
@@ -473,6 +554,8 @@ public class RadiconMonoBehaviourScript : MonoBehaviour {
         movieNoiseImage.color = endColor;
         }
 
+    // placeカメラin前側ofラジコン
+    // PlaceCameraInFrontOfRadicon の処理
     private void PlaceCameraInFrontOfRadicon (Transform cameraTransform, Transform radiconTransform) {
         if (cameraTransform == null || radiconTransform == null) {
             return;
@@ -490,6 +573,8 @@ public class RadiconMonoBehaviourScript : MonoBehaviour {
         cameraTransform.LookAt(focusPoint);
         }
 
+    // 持ち上げラジコンto高さ
+    // LiftRadiconToHeight の処理
     private IEnumerator LiftRadiconToHeight (float targetY, float duration) {
         float startY = transform.position.y;
         float elapsed = 0f;
@@ -509,6 +594,8 @@ public class RadiconMonoBehaviourScript : MonoBehaviour {
         transform.position = finalPosition;
         }
 
+    // 回転transform
+    // RotateTransform の処理
     private IEnumerator RotateTransform (Transform target, Quaternion startRotation, Quaternion endRotation, float duration) {
         if (target == null) {
             yield break;
@@ -527,6 +614,7 @@ public class RadiconMonoBehaviourScript : MonoBehaviour {
         target.rotation = endRotation;
         }
 
+    // SetPortalNoiseActive の処理
     private void SetPortalNoiseActive (bool isActive) {
         isPortalNoiseActive = isActive;
 
@@ -557,6 +645,8 @@ public class RadiconMonoBehaviourScript : MonoBehaviour {
             }
         }
 
+    // restoreポータルbaseテクスチャ
+    // RestorePortalBaseTexture の処理
     private void RestorePortalBaseTexture () {
         for (int i = 0; i < portalRenderers.Length; i++) {
             MeshRenderer renderer = portalRenderers[i];
@@ -569,6 +659,7 @@ public class RadiconMonoBehaviourScript : MonoBehaviour {
             }
         }
 
+    // EnsureMovieOverlay の処理
     private void EnsureMovieOverlay (UnityEngine.Camera mainCamera) {
         if (movieOverlayCanvas != null && movieNoiseImage != null) {
             return;
@@ -597,6 +688,7 @@ public class RadiconMonoBehaviourScript : MonoBehaviour {
             }
         }
 
+    // SetScreenNoiseActive の処理
     private void SetScreenNoiseActive (bool isActive) {
         if (movieNoiseImage == null) {
             return;
@@ -618,6 +710,8 @@ public class RadiconMonoBehaviourScript : MonoBehaviour {
 
 
 
+    // 試行取得ろうそくを試行
+    // TryPickupCandle の処理
     private void TryPickupCandle () {
         Vector3 center = transform.position + Vector3.up * interactionHeightOffset;
         Collider[] nearbyColliders = Physics.OverlapSphere(center, candlePickupRange, ~0, QueryTriggerInteraction.Ignore);
@@ -646,8 +740,9 @@ public class RadiconMonoBehaviourScript : MonoBehaviour {
         heldCandle = nearestCandle;
         }
 
- 
 
+
+    // 物理更新
     private void FixedUpdate () {
         if (isPlayingMovie) {
             rb.linearVelocity = Vector3.zero;
@@ -665,6 +760,8 @@ public class RadiconMonoBehaviourScript : MonoBehaviour {
         ApplySteering(steer, isGrounded);
         ApplyStability(isGrounded);
         }
+    // enforceヨーonlyrotation
+    // EnforceYawOnlyRotation の処理
     private void EnforceYawOnlyRotation () {
         Vector3 currentEulerAngles = rb.rotation.eulerAngles;
         rb.MoveRotation(Quaternion.Euler(0f, currentEulerAngles.y, 0f));
@@ -673,6 +770,7 @@ public class RadiconMonoBehaviourScript : MonoBehaviour {
         rb.angularVelocity = new Vector3(0f, angularVelocity.y, 0f);
         }
 
+    // ApplyPlanarMovement の処理
     private void ApplyPlanarMovement (float throttle, bool isGrounded) {
         if (!isGrounded) {
             return;
@@ -696,6 +794,7 @@ public class RadiconMonoBehaviourScript : MonoBehaviour {
             }
         }
 
+    // ApplySteering の処理
     private void ApplySteering (float steer, bool isGrounded) {
         if (!isGrounded || Mathf.Abs(steer) < 0.0001f) {
             return;
@@ -706,6 +805,7 @@ public class RadiconMonoBehaviourScript : MonoBehaviour {
         rb.MoveRotation(nextRotation);
         }
 
+    // ApplyStability の処理
     private void ApplyStability (bool isGrounded) {
         rb.linearDamping = isGrounded ? dragOnGround : 0.4f;
         rb.angularDamping = isGrounded ? angularDragOnGround : 1f;
@@ -718,11 +818,14 @@ public class RadiconMonoBehaviourScript : MonoBehaviour {
 
         }
 
+    // IsGrounded の処理
     private bool IsGrounded () {
         return Physics.CheckSphere(groundCheck.position, groundCheckRadius, groundLayers, QueryTriggerInteraction.Ignore);
         }
 
 #if UNITY_EDITOR
+    // ondrawgizmosselected
+    // OnDrawGizmosSelected の処理
     private void OnDrawGizmosSelected () {
         Transform checkTarget = groundCheck == null ? transform : groundCheck;
 
