@@ -14,10 +14,19 @@ public class EnemyMonoBehaviourScript : MonoBehaviour {
     [SerializeField] float sikaiForwardOffset = 1.0f;
     [SerializeField] float sikaiDownOffset = 0.0f;
 
+    [Header("Dark Aura")]
+    [SerializeField] Color auraColor = new Color(0f, 0f, 0f, 0.9f);
+    [SerializeField] float auraSize = 0.12f;
+    [SerializeField] float auraLifetime = 0.6f;
+    [SerializeField] float auraRateOverTime = 45f;
+    [SerializeField] float auraRadius = 0.35f;
+    [SerializeField] float auraUpwardSpeed = 0.15f;
+
     Vector3 originPosition;
     Vector3 targetPosition;
     float idleTimer;
     bool isMovementPaused;
+    ParticleSystem auraParticleSystem;
 
     public void SetMovementPaused (bool isPaused) {
         isMovementPaused = isPaused;
@@ -26,6 +35,7 @@ public class EnemyMonoBehaviourScript : MonoBehaviour {
     void Start () {
         originPosition = transform.position;
         ResolveSikaiIfNeeded();
+        EnsureDarkAura();
         UpdateSikaiPosition();
         PickNextTarget();
         }
@@ -97,6 +107,61 @@ public class EnemyMonoBehaviourScript : MonoBehaviour {
         if (child != null) {
             sikai = child;
             }
+        }
+
+
+    void EnsureDarkAura () {
+        if (auraParticleSystem != null) {
+            return;
+            }
+
+        Transform auraTransform = transform.Find("DarkAuraParticles");
+        if (auraTransform != null) {
+            auraParticleSystem = auraTransform.GetComponent<ParticleSystem>();
+            if (auraParticleSystem != null) {
+                return;
+                }
+            }
+
+        GameObject auraObject = new GameObject("DarkAuraParticles");
+        auraObject.transform.SetParent(transform, false);
+        auraObject.transform.localPosition = Vector3.zero;
+
+        auraParticleSystem = auraObject.AddComponent<ParticleSystem>();
+
+        ParticleSystem.MainModule main = auraParticleSystem.main;
+        main.loop = true;
+        main.playOnAwake = true;
+        main.startColor = auraColor;
+        main.startSize = auraSize;
+        main.startLifetime = auraLifetime;
+        main.startSpeed = auraUpwardSpeed;
+        main.simulationSpace = ParticleSystemSimulationSpace.Local;
+
+        ParticleSystem.EmissionModule emission = auraParticleSystem.emission;
+        emission.rateOverTime = auraRateOverTime;
+
+        ParticleSystem.ShapeModule shape = auraParticleSystem.shape;
+        shape.shapeType = ParticleSystemShapeType.Sphere;
+        shape.radius = auraRadius;
+
+        ParticleSystem.ColorOverLifetimeModule colorOverLifetime = auraParticleSystem.colorOverLifetime;
+        colorOverLifetime.enabled = true;
+        Gradient fadeGradient = new Gradient();
+        fadeGradient.SetKeys(
+            new[] {
+                new GradientColorKey(Color.black, 0f),
+                new GradientColorKey(Color.black, 1f),
+            },
+            new[] {
+                new GradientAlphaKey(0.85f, 0f),
+                new GradientAlphaKey(0.2f, 0.75f),
+                new GradientAlphaKey(0f, 1f),
+            }
+        );
+        colorOverLifetime.color = fadeGradient;
+
+        auraParticleSystem.Play();
         }
 
 
