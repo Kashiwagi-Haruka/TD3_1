@@ -35,8 +35,18 @@ public class EnemyMonoBehaviourScript : MonoBehaviour {
     [SerializeField] float auraRateOverTime = 45f;
     // auraRadius
     [SerializeField] float auraRadius = 0.35f;
+  
+    // auraRadiusScaleMultiplier
+    [SerializeField] float auraRadiusScaleMultiplier = 0.75f;
+    // auraHeightScaleMultiplier
+    [SerializeField] float auraHeightScaleMultiplier = 1.35f;
+    // auraBottomOffsetMultiplier
+    [SerializeField] float auraBottomOffsetMultiplier = 0.55f;
     // auraUpwardSpeed
-    [SerializeField] float auraUpwardSpeed = 0.15f;
+    [SerializeField] float auraUpwardSpeed = 0.7f;
+    // auraGravity
+    [SerializeField] float auraGravity = 0.9f;
+
 
     // originPosition
     Vector3 originPosition;
@@ -156,6 +166,8 @@ public class EnemyMonoBehaviourScript : MonoBehaviour {
         if (auraTransform != null) {
             auraParticleSystem = auraTransform.GetComponent<ParticleSystem>();
             if (auraParticleSystem != null) {
+                ConfigureAuraShape();
+                auraParticleSystem.Play();
                 return;
                 }
             }
@@ -173,14 +185,13 @@ public class EnemyMonoBehaviourScript : MonoBehaviour {
         main.startSize = auraSize;
         main.startLifetime = auraLifetime;
         main.startSpeed = auraUpwardSpeed;
+        main.gravityModifier = auraGravity;
         main.simulationSpace = ParticleSystemSimulationSpace.Local;
 
         ParticleSystem.EmissionModule emission = auraParticleSystem.emission;
         emission.rateOverTime = auraRateOverTime;
 
-        ParticleSystem.ShapeModule shape = auraParticleSystem.shape;
-        shape.shapeType = ParticleSystemShapeType.Sphere;
-        shape.radius = auraRadius;
+        ConfigureAuraShape();
 
         ParticleSystem.ColorOverLifetimeModule colorOverLifetime = auraParticleSystem.colorOverLifetime;
         colorOverLifetime.enabled = true;
@@ -201,10 +212,43 @@ public class EnemyMonoBehaviourScript : MonoBehaviour {
         auraParticleSystem.Play();
         }
 
+    // ConfigureAuraShape の処理
+    void ConfigureAuraShape () {
+        if (auraParticleSystem == null) {
+            return;
+            }
+
+        ParticleSystem.MainModule main = auraParticleSystem.main;
+        main.startSpeed = auraUpwardSpeed;
+        main.gravityModifier = auraGravity;
+
+        Vector3 enemyScale = transform.lossyScale;
+        float horizontalExtent = Mathf.Max(enemyScale.x, enemyScale.z) * auraRadiusScaleMultiplier;
+        float verticalExtent = enemyScale.y * auraHeightScaleMultiplier;
+
+        Transform auraTransform = auraParticleSystem.transform;
+        auraTransform.localPosition = Vector3.down * ( enemyScale.y * auraBottomOffsetMultiplier );
+
+        ParticleSystem.ShapeModule shape = auraParticleSystem.shape;
+        shape.shapeType = ParticleSystemShapeType.Box;
+        shape.scale = new Vector3(
+            Mathf.Max(auraRadius * 2f, horizontalExtent),
+            Mathf.Max(auraSize, verticalExtent),
+            Mathf.Max(auraRadius * 2f, horizontalExtent)
+        );
+
+        ParticleSystem.VelocityOverLifetimeModule velocityOverLifetime = auraParticleSystem.velocityOverLifetime;
+        velocityOverLifetime.enabled = true;
+        velocityOverLifetime.space = ParticleSystemSimulationSpace.Local;
+        velocityOverLifetime.x = new ParticleSystem.MinMaxCurve(0f);
+        velocityOverLifetime.y = new ParticleSystem.MinMaxCurve(auraUpwardSpeed);
+        velocityOverLifetime.z = new ParticleSystem.MinMaxCurve(0f);
+        }
+
 
     // UpdateSikaiPosition の処理
     void UpdateSikaiPosition () {
-    ResolveSikaiIfNeeded ();
+        ResolveSikaiIfNeeded();
         if (sikai == null) {
             return;
             }
